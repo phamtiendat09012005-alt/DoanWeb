@@ -29,13 +29,17 @@ namespace THLTW_B2.Hubs
                 await _context.SaveChangesAsync();
 
                 // 2. Phát tín hiệu Real-time cho mọi người để cập nhật giao diện
-                // Gửi ID để các trình duyệt tìm đúng thẻ kèo để sửa
                 await Clients.All.SendAsync("MatchAcceptedUpdate", posterName, acceptorName, acceptorPhone);
             }
         }
 
-        public async Task FindOpponent(string user, string date, string time, string phone, string pitch, string note)
+        // ĐÃ SỬA: Đổi tham số cuối `note` thành `deposit`
+        public async Task FindOpponent(string user, string date, string time, string phone, string pitch, string deposit)
         {
+            // Xử lý chuyển đổi tiền cọc từ chuỗi (string) sang số (decimal)
+            decimal tienCoc = 0;
+            decimal.TryParse(deposit, out tienCoc);
+
             // 1. Lưu vào Database
             var newMatch = new MatchRequest
             {
@@ -44,14 +48,18 @@ namespace THLTW_B2.Hubs
                 TimeSlot = time,
                 Phone = phone,
                 PitchName = pitch,
-                Note = note,
+                Note = "", // Tạm để trống vì ta đã thay bằng tiền cọc ở giao diện
+
+                // LƯU TIỀN CỌC VÀO DATABASE
+                TienCoc = tienCoc, // (*** Đảm bảo trong class MatchRequest của bạn CÓ thuộc tính TienCoc nhé ***)
+
                 IsDeposited = true // Giả định đã thanh toán cọc thành công khi tạo kèo
             };
 
             _context.MatchRequests.Add(newMatch);
             await _context.SaveChangesAsync();
 
-            // 2. Định dạng lại tin nhắn để gửi Real-time (giống giao diện cũ của bạn)
+            // 2. Định dạng lại tin nhắn để gửi Real-time (ĐÃ THÊM HIỂN THỊ TIỀN CỌC)
             string fullMsg = $@"
             <div class='d-flex justify-content-between mb-2'>
                 <span class='text-light fw-bold small'><i class='fa-regular fa-calendar me-1'></i>{date}</span>
@@ -59,9 +67,11 @@ namespace THLTW_B2.Hubs
             </div>
             <div class='text-white mb-2 small'><i class='fa-solid fa-location-dot me-2 text-info'></i>Sân: {pitch}</div>
             <div class='text-white small mb-2'>
-                <i class='fa-solid fa-phone me-2 text-secondary'></i>{phone} | {note}
+                <i class='fa-solid fa-phone me-2 text-secondary'></i>{phone}
             </div>
-            <div class='mt-2'><span class='badge bg-success small'>ĐÃ CỌC SÂN</span></div>";
+            <div class='mt-2'>
+                <span class='badge bg-success small py-1 px-2'>ĐÃ CỌC: {tienCoc:N0} VNĐ</span>
+            </div>";
 
             // 3. Broadcast cho mọi người
             await Clients.All.SendAsync("ReceiveOpponentRequest", user, fullMsg);
