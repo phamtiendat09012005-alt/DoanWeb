@@ -40,6 +40,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages(); // BỔ SUNG 2: Bắt buộc phải có để chạy được màn hình Identity (Login/Register)
 
 var app = builder.Build();
+
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
