@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using THLTW_B2.DataAccess;
 
@@ -11,9 +12,11 @@ using THLTW_B2.DataAccess;
 namespace THLTW_B2.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322040329_AddTeamModel")]
+    partial class AddTeamModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -311,12 +314,6 @@ namespace THLTW_B2.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("HostScore")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsDeposited")
                         .HasColumnType("bit");
 
@@ -335,9 +332,6 @@ namespace THLTW_B2.Migrations
 
                     b.Property<string>("OpponentPhone")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("OpponentScore")
-                        .HasColumnType("int");
 
                     b.Property<string>("OpponentTeamName")
                         .HasColumnType("nvarchar(max)");
@@ -455,23 +449,8 @@ namespace THLTW_B2.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int>("Draws")
-                        .HasColumnType("int");
-
-                    b.Property<int>("FairPlayPoint")
-                        .HasColumnType("int");
-
-                    b.Property<int>("GoalsAgainst")
-                        .HasColumnType("int");
-
-                    b.Property<int>("GoalsFor")
-                        .HasColumnType("int");
-
                     b.Property<string>("LogoUrl")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Losses")
-                        .HasColumnType("int");
 
                     b.Property<string>("MembersList")
                         .IsRequired()
@@ -481,12 +460,6 @@ namespace THLTW_B2.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("TotalMatches")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Wins")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

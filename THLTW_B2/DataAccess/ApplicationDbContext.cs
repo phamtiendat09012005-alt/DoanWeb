@@ -14,6 +14,7 @@ namespace THLTW_B2.DataAccess
         public DbSet<Product> Products { get; set; }
         public DbSet<SoccerField> SoccerFields { get; set; }
         public DbSet<Booking> Bookings { get; set; }
+        public DbSet<Team> Teams { get; set; }
     }
 
 }

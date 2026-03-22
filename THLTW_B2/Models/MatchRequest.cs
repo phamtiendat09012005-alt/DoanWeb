@@ -20,6 +20,14 @@ namespace THLTW_B2.Models
         public string? OpponentName { get; set; }
         public string? OpponentPhone { get; set; }
         public bool IsOpponentDeposited { get; set; } = false;
+        // Tỉ số của đội chủ nhà (Người tạo kèo)
+        public int? HostScore { get; set; }
+
+        // Tỉ số của đội khách (Người nhận kèo)
+        public int? OpponentScore { get; set; }
+
+        // Xác nhận trận đấu đã đá xong và chốt kết quả
+        public bool IsCompleted { get; set; } = false;
 
     }
 }
