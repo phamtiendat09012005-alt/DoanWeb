@@ -1,0 +1,96 @@
+﻿@model THLTW_B2.Models.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Tổng Quan Bảng Điều Khiển";
+    // Không còn dòng Layout = null nữa
+    // Khung giao diện (Sidebar, CSS) sẽ tự động được load từ _AdminLayout.cshtml
+
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color: #198754;">
+            <div>
+                <p>Doanh Thu Hôm Nay</p>
+                <h3>@Model.TodayRevenue.ToString("N0")₫</h3>
+            </div>
+            <i class="bi bi-cash-coin stat-icon" style="color: #198754;"></i>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color: #0d6efd;">
+            <div>
+                <p>Lượt Đặt Mới</p>
+                <h3>@Model.NewBookings</h3>
+            </div>
+            <i class="bi bi-calendar-plus stat-icon" style="color: #0d6efd;"></i>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color: #ffc107;">
+            <div>
+                <p>Kèo Đang Chờ Ghép</p>
+                <h3>@Model.PendingMatches</h3>
+            </div>
+            <i class="bi bi-people stat-icon" style="color: #ffc107;"></i>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card" style="border-left-color: #dc3545;">
+            <div>
+                <p>Hàng Sắp Hết (< 10)</p>
+                <h3>@Model.LowStockProducts món</h3>
+            </div>
+            <i class="bi bi-box-seam stat-icon" style="color: #dc3545;"></i>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-list-task"></i> Yêu cầu đặt sân mới nhất</h6>
+        <a href="/Admin/Bookings" class="btn btn-sm btn-primary">Xem tất cả</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã Booking</th>
+                        <th>Khách Hàng</th>
+                        <th>Sân</th>
+                        <th>Thời Gian</th>
+                        <th>Trạng Thái</th>
+                        <th>Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>#BK10023</td>
+                        <td>Nguyễn Văn A</td>
+                        <td>Sân 5 Người - Số 1</td>
+                        <td>18:00 - 19:30 | Hôm nay</td>
+                        <td><span class="badge bg-warning text-dark">Chờ Duyệt</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-success"><i class="bi bi-check-lg"></i></button>
+                            <button class="btn btn-sm btn-danger"><i class="bi bi-x-lg"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>#BK10022</td>
+                        <td>Trần Thị B</td>
+                        <td>Sân 7 Người - Số 3</td>
+                        <td>19:30 - 21:00 | Hôm nay</td>
+                        <td><span class="badge bg-success">Đã Duyệt</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-check-lg"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

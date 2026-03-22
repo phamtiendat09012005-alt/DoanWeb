@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="keywords" content="đặt sân bóng, sân cỏ nhân tạo, tìm đối thủ bóng đá, QLSBMini" />
+    <meta name="description" content="Hệ thống quản lý và đặt sân bóng đá mini chuyên nghiệp" />
+    <meta name="author" content="Nhóm 4 Người - QLSBMini" />
+
+    <title>QLSBMini | Hệ Thống Đặt Sân & Ghép Kèo Bóng Đá</title>
+
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" />
+    <link href="https://fonts.googleapis.com/css?family=Poppins:400,700|Raleway:400,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="/Temp/css/bootstrap.css" />
+    <link href="/Temp/css/style.css" rel="stylesheet" />
+    <link href="/Temp/css/responsive.css" rel="stylesheet" />
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        .heading_container h2 span,
+        .slider_section .detail-box h1 span {
+            color: #007bff !important;
+        }
+
+        .btn-warning,
+        .slider_section .detail-box a,
+        .service_section .btn-box a,
+        .started_section .btn-box a,
+        .agency_section .detail-box a {
+            background-color: #007bff !important;
+            border: 1px solid #007bff !important;
+            color: #ffffff !important;
+        }
+
+            .slider_section .detail-box a:hover,
+            .service_section .btn-box a:hover,
+            .started_section .btn-box a:hover,
+            .agency_section .detail-box a:hover {
+                background-color: transparent !important;
+                color: #007bff !important;
+            }
+
+        .portfolio_section .img-box {
+            border-color: #007bff !important;
+        }
+
+        .info_section {
+            background-color: #003366 !important;
+        }
+
+        .footer_section {
+            background-color: #002244 !important;
+        }
+
+        .carousel-indicators li {
+            color: #adb5bd !important; /* Màu xám cho số bình thường */
+            font-weight: 800;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+            .carousel-indicators li.active {
+                color: #007bff !important; /* Màu xanh dương đồng bộ với giao diện */
+                transform: scale(1.3);
+                opacity: 1 !important;
+            }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+
+<body>
+    <header class="header_section bg-light shadow-sm">
+        <div class="container-fluid">
+            <nav class="navbar navbar-expand-lg custom_nav-container pt-3">
+                <a class="navbar-brand" href="/">
+                    <span style="color: #007bff; font-weight: bold; font-size: 28px;">⚽ QLSBMini</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <div class="d-flex ml-auto flex-column flex-lg-row align-items-center">
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <a class="nav-link" href="/">Trang Chủ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/DatSan">Đặt Sân</a>
+                            </li>
+                            <li class="nav-item ">
+                                <a class="nav-link" asp-controller="TimDoiThu" asp-action="Index">TÌM ĐỐI THỦ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/CuaHang">CỬA HÀNG</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#footer-contact">Liên Hệ</a>
+                            </li>
+                        </ul>
+                        <partial name="_LoginPartial" />
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <footer id="footer-contact" class="info_section layout_padding2-top">
+        <div class="info_container">
+            <div class="container">
+                <div class="row text-white">
+                    <div class="col-md-6 col-lg-3">
+                        <h6 style="color: #00aaff;">QLSBMini</h6>
+                        <p>Nền tảng quản lý và kết nối đam mê bóng đá phủi hàng đầu. Khỏe để cống hiến!</p>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <h6 style="color: #00aaff;">Liên kết nhanh</h6>
+                        <ul class="list-unstyled">
+                            <li><a href="#" class="text-white">Đặt Sân Trong Ngày</a></li>
+                            <li><a href="#" class="text-white">Sảnh Ghép Kèo</a></li>
+                            <li><a href="#" class="text-white">Quy Định Sân Bóng</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <h6 style="color: #00aaff;">Hỗ trợ khách hàng</h6>
+                        <ul class="list-unstyled">
+                            <li><a href="#" class="text-white">Hướng dẫn đặt sân</a></li>
+                            <li><a href="#" class="text-white">Chính sách hủy sân</a></li>
+                            <li><a href="#" class="text-white">Báo cáo vi phạm</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <h6 style="color: #00aaff;">LIÊN HỆ</h6>
+                        <div class="info_link-box">
+                            <span class="text-white">📍 Quận 1, TP. Hồ Chí Minh</span><br />
+                            <span class="text-white">📞 +84 123 456 789</span><br />
+                            <span class="text-white">✉️ admin@qlsbmini.com</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer_section">
+            <div class="container text-center py-3">
+                <p class="text-white mb-0">
+                    &copy; <span id="displayYear">2026</span> All Rights Reserved By Đồ Án QLSBMini
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="text/javascript" src="/Temp/js/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript" src="/Temp/js/bootstrap.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="/Temp/js/custom.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

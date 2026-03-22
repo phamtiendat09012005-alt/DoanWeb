@@ -1,0 +1,45 @@
+﻿@model THLTW_B2.Models.Category
+
+@{
+    ViewData["Title"] = "Thêm Danh Mục";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4 text-center text-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Tạo Nhóm Sản Phẩm Mới
+                    </h5>
+                    <form asp-action="Create">
+                        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-bold small text-uppercase text-muted"></label>
+                            <input asp-for="Name" class="form-control bg-light border-0 py-2" placeholder="VD: Đồ uống, Cho thuê giày..." />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-bold small text-uppercase text-muted"></label>
+                            <textarea asp-for="Description" class="form-control bg-light border-0" rows="3" placeholder="Ghi chú về nhóm này..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm">Lưu danh mục</button>
+                            <a asp-action="Index" class="btn btn-link text-secondary btn-sm text-decoration-none">Hủy bỏ</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

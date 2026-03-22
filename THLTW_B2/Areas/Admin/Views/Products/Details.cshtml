@@ -1,0 +1,102 @@
+﻿@model THLTW_B2.Models.Product
+
+@{
+    ViewData["Title"] = "Chi tiết sản phẩm";
+}
+
+<div class="container-fluid py-3">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h3 class="mb-0 text-dark fw-bold">
+                <i class="bi bi-info-circle-fill text-info me-2"></i>Thông Tin Chi Tiết
+            </h3>
+            <p class="text-muted mt-1">Xem chi tiết thông số và trạng thái tồn kho của sản phẩm.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+                <i class="bi bi-arrow-left me-2"></i> Quay lại danh sách
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="row g-0">
+                    <div class="col-md-5 bg-light d-flex align-items-center justify-content-center p-4 border-end">
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <img src="@Model.ImageUrl" class="img-fluid rounded-3 shadow-sm" style="max-height: 350px; object-fit: cover;" alt="@Model.Name">
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted">
+                                <i class="bi bi-image" style="font-size: 5rem; opacity: 0.3;"></i>
+                                <p>Sản phẩm chưa có ảnh</p>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-md-7">
+                        <div class="card-body p-4 p-md-5">
+                            <div class="mb-4">
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 mb-2">
+                                    <i class="bi bi-tag-fill me-1"></i> @Model.Category.Name
+                                </span>
+                                <h2 class="fw-bold text-dark">@Model.Name</h2>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-6">
+                                    <p class="text-muted small text-uppercase fw-bold mb-1">Giá bán hiện tại</p>
+                                    <h3 class="text-danger fw-bold">@Model.Price.ToString("N0") <small class="fs-6 text-muted">VNĐ</small></h3>
+                                </div>
+                                <div class="col-6 border-start ps-4">
+                                    <p class="text-muted small text-uppercase fw-bold mb-1">Trạng thái kho</p>
+                                    @if (Model.StockQuantity > 10)
+                                    {
+                                        <h4 class="text-success fw-bold"><i class="bi bi-check-circle-fill me-2"></i>Còn hàng</h4>
+                                    }
+                                    else if (Model.StockQuantity > 0)
+                                    {
+                                        <h4 class="text-warning fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Sắp hết</h4>
+                                    }
+                                    else
+                                    {
+                                        <h4 class="text-danger fw-bold"><i class="bi bi-x-circle-fill me-2"></i>Hết hàng</h4>
+                                    }
+                                </div>
+                            </div>
+
+                            <hr class="my-4 opacity-50">
+
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <p class="mb-1 text-muted small fw-bold text-uppercase">Số lượng tồn</p>
+                                    <p class="text-dark fw-semibold fs-5">@Model.StockQuantity @Model.Unit</p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <p class="mb-1 text-muted small fw-bold text-uppercase">Đơn vị tính</p>
+                                    <p class="text-dark fw-semibold fs-5">@Model.Unit</p>
+                                </div>
+                                <div class="col-12">
+                                    <p class="mb-1 text-muted small fw-bold text-uppercase">Mã sản phẩm hệ thống</p>
+                                    <p class="text-muted font-monospace">#PROD-@Model.ProductId.ToString("D4")</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 d-flex gap-2">
+                                <a asp-action="Edit" asp-route-id="@Model.ProductId" class="btn btn-warning btn-lg rounded-pill px-5 fw-bold shadow-sm">
+                                    <i class="bi bi-pencil-square me-2"></i> Chỉnh sửa
+                                </a>
+                                <button class="btn btn-light btn-lg rounded-pill px-4 border" onclick="window.print()">
+                                    <i class="bi bi-printer"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

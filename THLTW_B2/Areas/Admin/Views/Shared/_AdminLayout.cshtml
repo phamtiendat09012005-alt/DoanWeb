@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin QLSBMini</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .sidebar {
+            width: 260px;
+            min-height: 100vh;
+            background-color: #212529;
+            color: #fff;
+            position: fixed;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+            .sidebar .brand {
+                padding: 20px;
+                font-size: 1.5rem;
+                font-weight: bold;
+                color: #0d6efd;
+                text-align: center;
+                border-bottom: 1px solid #343a40;
+            }
+
+            .sidebar .nav-link {
+                color: #adb5bd;
+                padding: 12px 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                transition: 0.2s;
+                text-decoration: none;
+            }
+
+                .sidebar .nav-link:hover, .sidebar .nav-link.active {
+                    background-color: #343a40;
+                    color: #fff;
+                    border-left: 4px solid #0d6efd;
+                }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+            width: calc(100% - 260px);
+        }
+
+        .top-header {
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+    </style>
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    <nav class="sidebar flex-column">
+        <div class="brand">
+            <i class="bi bi-dribbble"></i> QLSBMini
+        </div>
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a href="/Admin/Home/Index" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")">
+                    <i class="bi bi-speedometer2"></i> Tổng Quan
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/Admin/Products" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Products" ? "active" : "")">
+                    <i class="bi bi-box-seam"></i> Quản Lý Kho & Dịch Vụ
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/Admin/Bookings" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Bookings" ? "active" : "")">
+                    <i class="bi bi-calendar-check"></i> Lịch Đặt Sân
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="/Admin/SoccerFields" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "SoccerFields" ? "active" : "")">
+                    <i class="bi bi-grid-3x3-gap-fill"></i> Quản Lý Sân Bóng
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="/Admin/Users" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Users" ? "active" : "")">
+                    <i class="bi bi-people-fill"></i> Quản Lý Nhân Viên
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+
+        <header class="top-header">
+            <div>
+                <h5 class="mb-0 text-dark">Chào mừng, <strong>Quản Trị Viên</strong>!</h5>
+                <small class="text-muted">Hôm nay là một ngày tuyệt vời để quản lý hệ thống.</small>
+            </div>
+            <form class="form-inline m-0" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="~/" method="post">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                </button>
+            </form>
+        </header>
+
+        <main role="main">
+            @RenderBody()
+        </main>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>s

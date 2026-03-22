@@ -1,0 +1,91 @@
+﻿@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Đăng ký Tài Khoản";
+    Layout = null; // Tạm thời để null cho chạy được, sau này có giao diện mình bỏ dòng này đi
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - QLSBMini</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <h2 class="text-center text-primary mb-4">@ViewData["Title"]</h2>
+                        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                            <div class="form-floating mb-3">
+                                <input asp-for="Input.FullName" class="form-control" placeholder="Nguyễn Văn A" aria-required="true" />
+                                <label asp-for="Input.FullName">Họ và Tên</label>
+                                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                                <label asp-for="Input.Email">Email</label>
+                                <span asp-validation-for="Input.Email" class="text-danger"></span>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
+                                <label asp-for="Input.Password">Mật khẩu</label>
+                                <span asp-validation-for="Input.Password" class="text-danger"></span>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
+                                <label asp-for="Input.ConfirmPassword">Xác nhận mật khẩu</label>
+                                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                            </div>
+
+                            
+
+                            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Đăng Ký</button>
+                            <div class="d-flex align-items-center my-4">
+                                <hr class="flex-grow-1">
+                                <span class="mx-2 text-muted">hoặc kết nối nhanh với</span>
+                                <hr class="flex-grow-1">
+                            </div>
+                        </form>
+                        <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
+                            <button type="submit" class="w-100 btn btn-lg btn-outline-danger" name="provider" value="Google">
+                                <strong style="font-family: serif; font-size: 1.2rem;">G</strong> Đăng ký bằng Google
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var roleSelect = document.getElementById("roleSelect");
+            var secretCodeDiv = document.getElementById("secretCodeDiv");
+            var secretCodeInput = document.getElementById("secretCodeInput");
+
+            function toggleSecretCode() {
+                if (roleSelect.value === "Admin" || roleSelect.value === "Employee") {
+                    secretCodeDiv.style.display = "block"; // Hiện lên
+                } else {
+                    secretCodeDiv.style.display = "none";  // Giấu đi
+                    secretCodeInput.value = "";            // Xóa trắng dữ liệu lỡ nhập
+                }
+            }
+
+            // Chạy lần đầu khi load trang
+            toggleSecretCode();
+
+            // Lắng nghe mỗi khi đổi Role
+            roleSelect.addEventListener("change", toggleSecretCode);
+        });
+    </script>
+</body>
+</html>

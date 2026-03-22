@@ -1,0 +1,101 @@
+﻿@model THLTW_B2.Models.SoccerField
+
+@{
+    ViewData["Title"] = "Chỉnh sửa sân bóng";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <h4 class="fw-bold mb-4 text-warning">
+                        <i class="bi bi-pencil-square me-2"></i>Chỉnh Sửa Thông Tin Sân
+                    </h4>
+
+                    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <input type="hidden" asp-for="FieldId" />
+                        <input type="hidden" asp-for="ImageUrl" />
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="Name" class="form-label fw-bold small text-uppercase text-secondary"></label>
+                                <input asp-for="Name" class="form-control bg-light border-0 py-2" placeholder="Nhập tên sân..." />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Type" class="form-label fw-bold small text-uppercase text-secondary"></label>
+                                <select asp-for="Type" class="form-select bg-light border-0 py-2">
+                                    <option value="5 người">Sân 5 người</option>
+                                    <option value="7 người">Sân 7 người</option>
+                                </select>
+                                <span asp-validation-for="Type" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="PricePerHour" class="form-label fw-bold small text-uppercase text-secondary"></label>
+                                <div class="input-group">
+                                    <input asp-for="PricePerHour" class="form-control bg-light border-0 py-2" type="number" />
+                                    <span class="input-group-text bg-light border-0">VND</span>
+                                </div>
+                                <span asp-validation-for="PricePerHour" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold small text-uppercase text-secondary">Thay đổi hình ảnh</label>
+                                <input type="file" name="file" class="form-control bg-light border-0 py-2" accept="image/*" id="imageInput" />
+                                <div class="form-text small">Để trống nếu muốn giữ nguyên ảnh cũ.</div>
+                            </div>
+                            <div class="col-md-4 text-center mt-4">
+                                <div class="p-2 border rounded-3 bg-white shadow-sm">
+                                    <img id="previewImage" src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/no-image.png" : Model.ImageUrl)"
+                                         alt="Preview" class="img-fluid rounded-2" style="max-height: 120px;" />
+                                    <div class="small text-muted mt-1">Ảnh hiện tại</div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label fw-bold small text-uppercase text-secondary"></label>
+                                <textarea asp-for="Description" class="form-control bg-light border-0" rows="3" placeholder="Thông tin chi tiết về sân..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check form-switch p-3 bg-light rounded-3 shadow-sm border-0">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" asp-for="IsActive">
+                                    <label class="form-check-label fw-bold small text-uppercase text-secondary" asp-for="IsActive">Sân đang sẵn sàng cho thuê</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4 pt-3">
+                            <button type="submit" class="btn btn-warning rounded-pill py-2 fw-bold shadow-sm text-dark">
+                                <i class="bi bi-save-fill me-2"></i> Lưu Tất Cả Thay Đổi
+                            </button>
+                            <a asp-action="Index" class="btn btn-link text-secondary text-decoration-none small">
+                                <i class="bi bi-arrow-left"></i> Hủy và quay lại danh sách
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Script xem trước ảnh ngay khi chọn file
+        document.getElementById('imageInput').onchange = evt => {
+            const [file] = document.getElementById('imageInput').files;
+            if (file) {
+                document.getElementById('previewImage').src = URL.createObjectURL(file);
+            }
+        }
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

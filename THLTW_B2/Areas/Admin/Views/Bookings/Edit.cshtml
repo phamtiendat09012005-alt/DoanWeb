@@ -1,0 +1,65 @@
+﻿@model THLTW_B2.Models.Booking
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0 fw-bold">Chi Tiết Đơn Đặt Sân #BK@(Model.Id.ToString("D4"))</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-sm-6 mb-3">
+                            <h6 class="text-muted small text-uppercase fw-bold">Thông tin khách hàng</h6>
+                            <div class="fw-bold fs-5">@(Model.User?.FullName)</div>
+                            <div><i class="bi bi-telephone-fill text-secondary me-2"></i>@(Model.User?.PhoneNumber ?? "Không có SĐT")</div>
+                            <div><i class="bi bi-envelope-fill text-secondary me-2"></i>@(Model.User?.Email)</div>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <h6 class="text-muted small text-uppercase fw-bold">Thông tin thuê sân</h6>
+                            <div class="fw-bold fs-5 text-primary">@(Model.SoccerField?.Name)</div>
+                            <div><i class="bi bi-calendar-check text-secondary me-2"></i>@Model.BookingDate.ToString("dd/MM/yyyy")</div>
+                            <div><i class="bi bi-clock-fill text-secondary me-2"></i>@Model.TimeSlot</div>
+                            <div class="small mt-1 fst-italic text-muted">Ghi chú: @(Model.Note ?? "Không có")</div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-success d-flex justify-content-between align-items-center mb-4">
+                        <span class="fw-bold">TỔNG TIỀN:</span>
+                        <span class="fs-4 fw-bold text-success">@Model.TotalPrice.ToString("N0") VNĐ</span>
+                    </div>
+                    <div class="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+                        <span class="fw-bold">ĐÃ CỌC:</span>
+                        <span class="fs-5 fw-bold text-danger">@Model.DepositAmount.ToString("N0") VNĐ</span>
+                    </div>
+
+                    <hr />
+
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-uppercase text-secondary">Cập nhật trạng thái đơn</label>
+                            <select name="Status" class="form-select form-select-lg bg-light" asp-for="Status">
+                                <option value="Đã cọc">Đã cọc (Giữ sân)</option>
+                                <option value="Đã hoàn thành">Đã hoàn thành (Khách đã đá và thanh toán)</option>
+                                <option value="Đã hủy">Đã hủy</option>
+                            </select>
+                            <div class="form-text mt-2">
+                                <i class="bi bi-info-circle me-1"></i> Chọn <strong>Đã hoàn thành</strong> khi khách hàng kết thúc trận đấu và thanh toán phần còn lại.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold">
+                                <i class="bi bi-save me-2"></i> Lưu Trạng Thái
+                            </button>
+                            <a asp-action="Index" class="btn btn-link text-secondary text-decoration-none">Quay lại danh sách</a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
