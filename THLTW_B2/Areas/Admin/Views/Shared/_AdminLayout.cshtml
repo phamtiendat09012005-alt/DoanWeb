@@ -104,6 +104,11 @@
                     <i class="bi bi-people-fill"></i> Quản Lý Nhân Viên
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/Admin/Revenue" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Revenue" ? "active" : "")">
+                    <i class="bi bi-cash-coin"></i> Báo cáo Tài chính
+                </a>
+            </li>
         </ul>
     </nav>
 
