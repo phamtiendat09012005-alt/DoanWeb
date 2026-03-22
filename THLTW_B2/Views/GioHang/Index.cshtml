@@ -5,9 +5,9 @@
 }
 
 <div class="container layout_padding">
-    <div class="heading_container text-center mb-5 pb-3">
+    <div class="heading_container text-center mb-5 pb-3 mt-5">
         <h2 class="fw-bold text-uppercase">
-            Giỏ <span style="color: #007bff;">Hàng</span>
+            GIỎ <span style="color: #007bff;">HÀNG</span>
         </h2>
         <div class="mx-auto mt-3" style="width: 80px; height: 4px; background-color: #007bff; border-radius: 2px;"></div>
     </div>
@@ -55,22 +55,58 @@
             </table>
         </div>
 
-        <div class="d-flex justify-content-between mt-4">
+        <div class="d-flex justify-content-between mt-4 mb-5">
             <a href="/CuaHang" class="btn btn-outline-primary fw-bold px-4 py-2 rounded-pill">
-                <i class="fa-solid fa-arrow-left me-2"></i> Mua thêm món khác
+                Mua thêm món khác
             </a>
 
-            <a href="/GioHang/ThanhToan" class="btn btn-success fw-bold px-5 py-2 rounded-pill shadow">
-                THANH TOÁN NGAY <i class="fa-solid fa-arrow-right ms-2"></i>
-            </a>
+            <button type="button" class="btn btn-success fw-bold px-5 py-2 rounded-pill shadow" data-toggle="modal" data-target="#qrPaymentModal">
+                THANH TOÁN NGAY
+            </button>
         </div>
     }
     else
     {
-        <div class="text-center py-5 shadow-sm rounded-3 bg-light">
-            <i class="fa-solid fa-cart-shopping fa-4x text-muted mb-3"></i>
+        <div class="text-center py-5 shadow-sm rounded-3 bg-light mt-5">
             <h4 class="text-muted">Giỏ hàng của bạn đang trống!</h4>
             <a href="/CuaHang" class="btn btn-primary mt-3 px-4 rounded-pill">Quay lại cửa hàng</a>
         </div>
     }
+</div>
+
+<div class="modal fade" id="qrPaymentModal" tabindex="-1" aria-labelledby="qrPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="qrPaymentModalLabel">Thanh toán đơn hàng</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form asp-controller="GioHang" asp-action="ThanhToan" method="post">
+                <div class="modal-body text-center">
+                    <p class="mb-2">Vui lòng quét mã QR hoặc chuyển khoản để thanh toán:</p>
+
+                    @if (Model != null && Model.Any())
+                    {
+                        <h3 class="text-danger fw-bold mb-3">@Model.Sum(x => x.Total).ToString("#,##0") đ</h3>
+                    }
+
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QR Code" style="width: 200px; height: 200px; object-fit: contain;" />
+                        <p class="mt-2 mb-0 text-muted">Nội dung CK: <strong>MUANUOC SANPHUI</strong></p>
+                    </div>
+
+                    <div class="mb-3 text-start">
+                        <label for="GhiChu" class="form-label fw-bold">Ghi chú giao hàng (Bắt buộc):</label>
+                        <input type="text" class="form-control" id="GhiChu" name="ghiChu" placeholder="Vd: Giao ra sân số 2 cho anh Huy..." required>
+                        <small class="text-muted">Ghi rõ tên và số sân để nhân viên mang ra chính xác.</small>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-success fw-bold">Tôi đã chuyển khoản</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>

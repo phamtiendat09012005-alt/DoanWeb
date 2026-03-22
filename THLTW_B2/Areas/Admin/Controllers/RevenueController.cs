@@ -32,7 +32,18 @@ namespace THLTW_B2.Areas.Admin.Controllers
                 .Where(x => x.Status == "Đã hoàn thành" && x.MatchDate.Month == m && x.MatchDate.Year == y)
                 .ToListAsync();
 
-            decimal totalRevenue = completedBookings.Sum(b => b.TotalPrice) + completedMatches.Sum(x => 100000); // Giả sử kèo ghép thu phí 100k
+            // ---------------------------------------------------------
+            // [MỚI THÊM NÈ SẾP]: Lấy doanh thu từ Cửa hàng (Hóa đơn đã thanh toán)
+            // ---------------------------------------------------------
+            var completedOrders = await _context.Orders
+                .Where(o => o.Status == 1 && o.OrderDate.Month == m && o.OrderDate.Year == y)
+                .ToListAsync();
+
+            // CỘNG GỘP 3 NGUỒN TIỀN LẠI: Đặt sân + Ghép kèo + Bán nước/đồ
+            decimal totalRevenue = completedBookings.Sum(b => b.TotalPrice)
+                                 + completedMatches.Sum(x => 100000) // Giả sử kèo ghép thu phí 100k
+                                 + completedOrders.Sum(o => o.TotalAmount); // <--- TIỀN BÁN NƯỚC CHẢY VÀO ĐÂY!
+                                                                            // ---------------------------------------------------------
 
             // 2. TÍNH TỔNG CHI
             var expenses = await _context.Expenses

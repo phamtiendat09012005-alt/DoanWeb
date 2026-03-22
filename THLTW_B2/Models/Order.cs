@@ -31,5 +31,7 @@ namespace THLTW_B2.Models // Sếp nhớ check lại namespace cho khớp projec
 
         // Quan hệ 1-N: 1 Hóa đơn có nhiều Chi tiết
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+        [Display(Name = "Ghi chú giao hàng")]
+        public string? Note { get; set; }
     }
 }

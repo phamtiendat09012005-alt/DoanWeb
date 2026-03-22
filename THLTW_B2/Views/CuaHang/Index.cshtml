@@ -11,7 +11,7 @@
             color: white;
             padding: 80px 0;
             border-radius: 15px;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
 
         .product-card {
@@ -70,7 +70,7 @@
         .btn-add-cart {
             background-color: #007bff;
             color: white;
-            border-radius: 50px;
+            border-radius: 8px;
             font-weight: 600;
             transition: all 0.3s;
         }
@@ -83,13 +83,28 @@
     </style>
 }
 
-<div class="container layout_padding">
+<div class="container layout_padding mt-4">
     <div class="store-header text-center shadow">
         <h1 class="display-4 fw-bold text-uppercase">Tạp Hóa <span style="color: #00aaff;">Sân Phủi</span></h1>
         <p class="lead text-white-50">Nước mát lạnh - Phụ kiện xịn sò - Tiếp lửa đam mê</p>
     </div>
 
-    <div class="row g-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            @if (TempData["ThongBao"] != null)
+            {
+                <div class="alert alert-success py-2 mb-0 fw-bold">
+                    <i class="fa-solid fa-check-circle me-1"></i> @TempData["ThongBao"]
+                </div>
+            }
+        </div>
+
+        <a href="/GioHang" class="btn btn-warning fw-bold px-4 py-2 rounded-pill shadow-sm fs-5">
+            <i class="fa-solid fa-cart-shopping me-2"></i> ĐI ĐẾN GIỎ HÀNG
+        </a>
+    </div>
+
+    <div class="row g-4 mb-5">
         @if (Model != null && Model.Any())
         {
             foreach (var item in Model)
@@ -99,30 +114,32 @@
                         <span class="category-badge shadow-sm">@(item.Category != null ? item.Category.Name : "Khác")</span>
 
                         <div class="product-img-wrapper">
-                            <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "/images/no-image.png" : item.ImageUrl)"
-                                 alt="@item.Name"
-                                 onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                            <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "/images/no-image.png" : item.ImageUrl)" alt="@item.Name" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
                         </div>
 
                         <div class="card-body text-center d-flex flex-column">
                             <h5 class="card-title fw-bold text-dark mb-2" style="font-size: 1.1rem;">@item.Name</h5>
-
-                            <p class="text-muted small mb-1">
-                                Đơn vị: @(string.IsNullOrEmpty(item.Unit) ? "Cái" : item.Unit)
-                                | Tồn: @item.StockQuantity
-                            </p>
-
+                            <p class="text-muted small mb-1">Đơn vị: @(string.IsNullOrEmpty(item.Unit) ? "Cái" : item.Unit) | Tồn: @item.StockQuantity</p>
                             <p class="price-tag mb-3 mt-auto">@item.Price.ToString("#,##0") VNĐ</p>
 
                             @if (item.StockQuantity > 0)
                             {
-                                <a asp-controller="GioHang" asp-action="AddToCart" asp-route-id="@item.ProductId" class="btn btn-add-cart w-100 py-2">
-                                    <i class="fa-solid fa-cart-plus me-1"></i> Thêm Vào Giỏ
-                                </a>
+                                <form asp-controller="GioHang" asp-action="AddToCart" method="post" class="mt-auto">
+                                    <input type="hidden" name="id" value="@item.ProductId" />
+
+                                    <div class="input-group input-group-sm mb-2">
+                                        <span class="input-group-text fw-bold bg-light">Số lượng:</span>
+                                        <input type="number" name="quantity" class="form-control text-center fw-bold text-primary" value="1" min="1" max="@item.StockQuantity">
+                                    </div>
+
+                                    <button type="submit" class="btn btn-add-cart w-100 py-2 shadow-sm">
+                                        <i class="fa-solid fa-cart-plus me-1"></i> Thêm Vào Giỏ
+                                    </button>
+                                </form>
                             }
                             else
                             {
-                                <button class="btn btn-secondary w-100 py-2 fw-bold rounded-pill" disabled>
+                                <button class="btn btn-secondary w-100 py-2 fw-bold mt-auto" style="border-radius: 8px;" disabled>
                                     <i class="fa-solid fa-ban me-1"></i> HẾT HÀNG
                                 </button>
                             }
@@ -130,13 +147,6 @@
                     </div>
                 </div>
             }
-        }
-        else
-        {
-            <div class="col-12 text-center py-5">
-                <i class="fa-solid fa-box-open fa-4x text-muted mb-3"></i>
-                <h4 class="text-muted">Cửa hàng hiện chưa có sản phẩm nào.</h4>
-            </div>
         }
     </div>
 </div>

@@ -2,11 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using THLTW_B2.DataAccess; // Gọi DbContext của sếp ra
 using THLTW_B2.Models;     // Gọi Model Product ra
-
+using Microsoft.AspNetCore.Authorization;
 namespace THLTW_B2.Controllers
 {
+    [Authorize]
     public class CuaHangController : Controller
     {
+        
         private readonly ApplicationDbContext _context;
 
         // Tiêm (Inject) cái chìa khóa kho ApplicationDbContext vào đây
