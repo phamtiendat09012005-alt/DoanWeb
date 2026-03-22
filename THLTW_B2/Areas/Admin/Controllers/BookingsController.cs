@@ -3,9 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using THLTW_B2.DataAccess;
 using THLTW_B2.Models;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace THLTW_B2.Areas.Admin.Controllers
 {
@@ -20,12 +17,9 @@ namespace THLTW_B2.Areas.Admin.Controllers
             _context = context;
         }
 
-        // ============================================================
-        // 1. HIỂN THỊ DANH SÁCH CHIA 3 PHẦN
-        // ============================================================
         public async Task<IActionResult> Index()
         {
-            // A. Lấy dữ liệu từ bảng Đặt Sân Solo
+            // 1. Dữ liệu Đặt sân lẻ (Solo)
             var soloBookings = await _context.Bookings
                 .Include(b => b.User)
                 .Include(b => b.SoccerField)
@@ -41,7 +35,7 @@ namespace THLTW_B2.Areas.Admin.Controllers
                     IsMatch = false
                 }).ToListAsync();
 
-            // B. Lấy dữ liệu từ bảng Kèo Ghép
+            // 2. Dữ liệu Kèo ghép (Match)
             var matchBookings = await _context.MatchRequests
                 .Select(m => new BookingHistoryViewModel
                 {
@@ -56,51 +50,77 @@ namespace THLTW_B2.Areas.Admin.Controllers
                     IsMatch = true
                 }).ToListAsync();
 
-            // --- PHÂN LOẠI DỮ LIỆU SANG VIEW_BAG ---
+            var allData = soloBookings.Concat(matchBookings).ToList();
 
-            // TAB 1: Lịch đã đặt (Tất cả Solo + Kèo ghép đã có người nhận hoặc đã hủy)
-            ViewBag.AllBookings = soloBookings
-                .Concat(matchBookings.Where(m => m.Status != "Đang chờ đối thủ"))
+            // 3. Phân loại theo đúng nghiệp vụ Admin
+            // Tab 1: Đang hoạt động (Đã cọc, Đã có đối thủ) & Đã hủy
+            ViewBag.ActiveBookings = allData
+                .Where(x => x.Status == "Đã cọc" || x.Status == "Đã có đối thủ" || x.Status == "Đã hủy")
                 .OrderByDescending(x => x.Date).ToList();
 
-            // TAB 2: Lịch đã hoàn thành (Chỉ những trận đã xác nhận xong)
-            ViewBag.Completed = soloBookings.Where(b => b.Status == "Đã hoàn thành")
-                .Concat(matchBookings.Where(m => m.Status == "Đã có đối thủ")) // Có thể thêm logic chốt trận sau
+            // Tab 2: Lịch sử đã thu tiền
+            ViewBag.CompletedBookings = allData
+                .Where(x => x.Status == "Đã hoàn thành")
                 .OrderByDescending(x => x.Date).ToList();
 
-            // TAB 3: Lịch kèo ghép (Danh sách rao tìm đối thủ)
-            ViewBag.MatchRequests = matchBookings.OrderByDescending(x => x.Date).ToList();
+            // Tab 3: Bảng theo dõi Kèo đang chờ
+            ViewBag.PendingMatches = matchBookings
+                .Where(m => m.Status == "Đang chờ đối thủ")
+                .OrderByDescending(x => x.Date).ToList();
 
             return View();
         }
 
-        // 2. GET: Form duyệt/chỉnh sửa trạng thái đơn (Dành cho đặt lẻ)
-        public async Task<IActionResult> Edit(int? id)
+        // Xử lý nút bấm: Hoàn thành / Hủy đơn (Dùng AJAX)
+        [HttpPost]
+        public async Task<IActionResult> UpdateStatus(int id, bool isMatch, string newStatus)
         {
-            if (id == null) return NotFound();
+            try
+            {
+                if (isMatch)
+                {
+                    var match = await _context.MatchRequests.FindAsync(id);
+                    if (match == null) return Json(new { success = false, message = "Không tìm thấy kèo." });
+                    match.Status = newStatus;
+                }
+                else
+                {
+                    var booking = await _context.Bookings.FindAsync(id);
+                    if (booking == null) return Json(new { success = false, message = "Không tìm thấy đơn đặt." });
+                    booking.Status = newStatus;
+                }
 
-            var booking = await _context.Bookings
-                .Include(b => b.User)
-                .Include(b => b.SoccerField)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (booking == null) return NotFound();
-            return View(booking);
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+            }
         }
 
-        // 3. POST: Xử lý cập nhật trạng thái
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, string Status)
+        // ===================================================================
+        // HÀM MỚI BỔ SUNG: XEM CHI TIẾT HÓA ĐƠN & BIÊN BẢN TRẬN ĐẤU
+        // ===================================================================
+        public async Task<IActionResult> Details(int id, bool isMatch)
         {
-            var booking = await _context.Bookings.FindAsync(id);
-            if (booking == null || id != booking.Id) return NotFound();
-
-            booking.Status = Status;
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Đã cập nhật trạng thái đơn đặt sân thành công!";
-            return RedirectToAction(nameof(Index));
+            if (isMatch)
+            {
+                // Nếu là kèo ghép -> Gọi file MatchDetails.cshtml
+                var match = await _context.MatchRequests.FirstOrDefaultAsync(m => m.Id == id);
+                if (match == null) return NotFound();
+                return View("MatchDetails", match);
+            }
+            else
+            {
+                // Nếu là đặt sân lẻ -> Gọi file Details.cshtml mặc định
+                var booking = await _context.Bookings
+                    .Include(b => b.User)
+                    .Include(b => b.SoccerField)
+                    .FirstOrDefaultAsync(m => m.Id == id);
+                if (booking == null) return NotFound();
+                return View(booking);
+            }
         }
     }
 }

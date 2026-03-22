@@ -1,0 +1,65 @@
+﻿@model THLTW_B2.Models.MatchRequest
+@{
+    ViewData["Title"] = "Biên Bản Trận Đấu";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="bg-dark p-4 text-white text-center" style="background: linear-gradient(135deg, #212529, #343a40);">
+                    <h4 class="fw-bold mb-1 text-uppercase text-warning"><i class="bi bi-trophy-fill me-2"></i>Biên bản giao hữu</h4>
+                    <span class="text-white-50 small">Mã hệ thống: #MR@(Model.Id.ToString("D4"))</span>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <div class="row align-items-center text-center mb-5 bg-light py-4 rounded-4 shadow-sm border">
+                        <div class="col-5">
+                            <div class="mx-auto bg-primary bg-opacity-10 rounded-circle mb-2 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                                <i class="bi bi-shield-shaded text-primary fs-2"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-0 text-uppercase">@Model.TeamName</h5>
+                            <span class="badge bg-primary rounded-pill mt-1">Đội tạo kèo</span>
+                        </div>
+
+                        <div class="col-2">
+                            <h2 class="fw-bold text-danger mb-0 fst-italic">VS</h2>
+                        </div>
+
+                        <div class="col-5">
+                            <div class="mx-auto bg-danger bg-opacity-10 rounded-circle mb-2 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                                <i class="bi bi-shield-fill-check text-danger fs-2"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-0 text-uppercase">@(Model.OpponentName ?? "Chưa có")</h5>
+                            <span class="badge bg-danger rounded-pill mt-1">Đội nhận kèo</span>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-muted text-uppercase mb-3"><i class="bi bi-info-square me-2"></i>Thông tin thi đấu</h6>
+                    <div class="list-group list-group-flush mb-4 border rounded-4 overflow-hidden shadow-sm">
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 bg-light">
+                            <span class="text-muted small fw-bold"><i class="bi bi-geo-alt-fill text-danger me-2"></i>SÂN BÓNG</span>
+                            <span class="fw-bold text-dark fs-6">@Model.PitchName</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted small fw-bold"><i class="bi bi-calendar-event me-2"></i>NGÀY ĐÁ</span>
+                            <span class="fw-bold text-dark">@Model.MatchDate.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 bg-light">
+                            <span class="text-muted small fw-bold"><i class="bi bi-clock-history me-2"></i>KHUNG GIỜ</span>
+                            <span class="badge bg-dark rounded-pill px-3 py-2 fs-6">@Model.TimeSlot</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted small fw-bold"><i class="bi bi-check-circle-fill text-success me-2"></i>TRẠNG THÁI</span>
+                            <span class="badge bg-success rounded-pill px-3 py-2">@Model.Status</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-5 fw-bold"><i class="bi bi-x-lg me-2"></i>Đóng cửa sổ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
