@@ -36,5 +36,6 @@
         public string Type { get; set; } // "Đặt sân lẻ" hoặc "Kèo ghép"
         public string Status { get; set; }
         public bool IsMatch { get; set; } // Phân loại để hiển thị icon
+        public decimal TotalPrice { get; set; }
     }
 }

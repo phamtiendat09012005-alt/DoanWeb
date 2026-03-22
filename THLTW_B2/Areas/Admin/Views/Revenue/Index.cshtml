@@ -1,0 +1,166 @@
+﻿@model THLTW_B2.Models.RevenueDashboardViewModel
+@{
+    ViewData["Title"] = "Quản Lý Tài Chính";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <h3 class="fw-bold text-primary mb-0"><i class="bi bi-wallet2 me-2"></i>Báo Cáo Tài Chính</h3>
+
+        <form method="get" class="d-flex gap-2 mt-2 mt-md-0">
+            <select name="month" class="form-select bg-light fw-bold border-0 shadow-sm">
+                @for (int i = 1; i <= 12; i++)
+                {
+                    <option value="@i" selected="@(i == ViewBag.SelectedMonth)">Tháng @i</option>
+                }
+            </select>
+            <select name="year" class="form-select bg-light fw-bold border-0 shadow-sm">
+                <option value="2025" selected="@(ViewBag.SelectedYear == 2025)">2025</option>
+                <option value="2026" selected="@(ViewBag.SelectedYear == 2026)">2026</option>
+            </select>
+            <button type="submit" class="btn btn-primary shadow-sm"><i class="bi bi-filter"></i> Lọc</button>
+        </form>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success shadow-sm border-0"><i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]</div>
+    }
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 rounded-4 shadow-sm h-100" style="background: linear-gradient(135deg, #0d6efd, #0b5ed7); color: white;">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div><h6 class="text-uppercase fw-bold opacity-75 mb-1">Tổng Thu Đầu Vào</h6><h3 class="fw-bold mb-0">@Model.TotalRevenue.ToString("N0") ₫</h3></div>
+                    <div class="bg-white bg-opacity-25 p-3 rounded-circle"><i class="bi bi-arrow-down-left-circle-fill fs-1"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 rounded-4 shadow-sm h-100" style="background: linear-gradient(135deg, #dc3545, #b02a37); color: white;">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div><h6 class="text-uppercase fw-bold opacity-75 mb-1">Tổng Chi Đầu Ra</h6><h3 class="fw-bold mb-0">@Model.TotalExpense.ToString("N0") ₫</h3></div>
+                    <div class="bg-white bg-opacity-25 p-3 rounded-circle"><i class="bi bi-arrow-up-right-circle-fill fs-1"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 rounded-4 shadow-sm h-100" style="background: linear-gradient(135deg, #198754, #146c43); color: white;">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div><h6 class="text-uppercase fw-bold opacity-75 mb-1">Lợi Nhuận Ròng</h6><h3 class="fw-bold mb-0">@Model.NetProfit.ToString("N0") ₫</h3></div>
+                    <div class="bg-white bg-opacity-25 p-3 rounded-circle"><i class="bi bi-cash-coin fs-1"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-danger"><i class="bi bi-graph-down-arrow me-2"></i>Lịch Sử Chi Phí (Đầu Ra)</h6>
+                    <button class="btn btn-sm btn-danger rounded-pill fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                        <i class="bi bi-plus-lg"></i> Thêm Chi Phí
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top"><tr><th class="ps-4">Khoản Chi</th><th>Danh Mục</th><th class="text-end pe-4">Số Tiền</th></tr></thead>
+                            <tbody>
+                                @if (Model.RecentExpenses.Any())
+                                {
+                                    foreach (var e in Model.RecentExpenses)
+                                    {
+                                        <tr>
+                                            <td class="ps-4"><div class="fw-bold text-dark">@e.Title</div><small class="text-muted">@e.ExpenseDate.ToString("dd/MM/yyyy")</small></td>
+                                            <td><span class="badge bg-secondary bg-opacity-10 text-dark border">@e.Category</span></td>
+                                            <td class="text-end pe-4 fw-bold text-danger">- @e.Amount.ToString("N0") ₫</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="3" class="text-center py-4 text-muted">Chưa có khoản chi nào trong tháng.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-graph-up-arrow me-2"></i>Nguồn Thu Từ Sân Bóng</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top"><tr><th class="ps-4">Khách Hàng</th><th>Sân</th><th class="text-end pe-4">Số Tiền</th></tr></thead>
+                            <tbody>
+                                @if (Model.RecentRevenues.Any())
+                                {
+                                    foreach (var r in Model.RecentRevenues)
+                                    {
+                                        <tr>
+                                            <td class="ps-4"><div class="fw-bold text-dark">@r.CustomerName</div><small class="text-muted">Mã: #BK@r.Id</small></td>
+                                            <td><span class="badge bg-info bg-opacity-10 text-dark">@r.PitchName</span></td>
+                                            <td class="text-end pe-4 fw-bold text-success">+ @r.TotalPrice.ToString("N0") ₫</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="3" class="text-center py-4 text-muted">Chưa có đơn đặt sân nào hoàn thành.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addExpenseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold">Thêm Khoản Chi Mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddExpense" method="post">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mục đích chi</label>
+                        <input type="text" name="Title" class="form-control" placeholder="VD: Trả lương NV tháng 3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Danh mục</label>
+                        <select name="Category" class="form-select" required>
+                            <option value="Lương nhân viên">Lương nhân viên</option>
+                            <option value="Nhập hàng nước">Nhập hàng nước/bóng</option>
+                            <option value="Bảo trì hạ tầng">Bảo trì hạ tầng</option>
+                            <option value="Điện, nước, mạng">Điện, nước, mạng</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Số tiền chi (VNĐ)</label>
+                        <input type="number" name="Amount" class="form-control fw-bold text-danger" required min="1000">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ghi chú thêm (Tùy chọn)</label>
+                        <textarea name="Note" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold shadow">Lưu Khoản Chi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
