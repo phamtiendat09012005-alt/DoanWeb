@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Football TT</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        :root {
+            --sidebar-bg: #1a1d21;
+            --sidebar-active: #198754;
+            --header-bg: #144028;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        #wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR STYLE */
+        #sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            color: white;
+            transition: all 0.3s;
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+        }
+
+            #sidebar .sidebar-header {
+                padding: 25px 20px;
+                background: var(--header-bg);
+                text-align: center;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+
+            #sidebar .nav-link {
+                color: #adb5bd;
+                padding: 14px 20px;
+                border-left: 4px solid transparent;
+                font-size: 0.95rem;
+                transition: 0.2s;
+            }
+
+                #sidebar .nav-link:hover, #sidebar .nav-link.active {
+                    background: rgba(255,255,255,0.05);
+                    color: white;
+                    border-left-color: var(--sidebar-active);
+                }
+
+                #sidebar .nav-link i {
+                    width: 28px;
+                    font-size: 1.1rem;
+                }
+
+        /* CONTENT STYLE */
+        #content {
+            flex: 1;
+            margin-left: 260px; /* Đẩy nội dung ra sau sidebar cố định */
+            padding: 25px;
+            transition: all 0.3s;
+        }
+
+        .navbar-custom {
+            background: white;
+            border-bottom: 1px solid #e3e6f0;
+            margin-bottom: 25px;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            background: var(--sidebar-active);
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(25, 135, 84, 0.2);
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            transition: 0.3s;
+        }
+
+            .logout-btn:hover {
+                background: #dc3545;
+                color: white;
+            }
+
+        /* Scrollbar Sidebar */
+        #sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        #sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div id="wrapper">
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h4 class="mb-0 fw-bold"><i class="fa-solid fa-futbol me-2 text-warning"></i>Football TT</h4>
+            </div>
+
+            <ul class="nav flex-column mt-3">
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Employee" asp-controller="Home" asp-action="Index">
+                        <div class="sb-nav-link-icon"><i class="fa-regular fa-calendar"></i></div> Quản lý lịch đặt
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Employee" asp-controller="Home" asp-action="BanHang">
+                        <div class="sb-nav-link-icon"><i class="fa-solid fa-cart-shopping"></i></div>  Bán hàng
+                    </a>
+                </li>
+                <a class="nav-link" asp-area="Employee" asp-controller="Schedule" asp-action="Timeline">
+                    <div class="sb-nav-link-icon"><i class="fa-solid fa-table-cells text-success"></i></div>
+                    Sơ đồ lịch sân
+                </a>
+
+                <li class="mt-4 px-3">
+                    <hr class="text-secondary opacity-25">
+                    <form asp-area="Identity" asp-page="/Account/Logout" method="post">
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100 rounded-pill fw-bold">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="container-fluid px-4">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

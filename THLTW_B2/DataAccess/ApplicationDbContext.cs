@@ -20,6 +20,7 @@ namespace THLTW_B2.DataAccess
         public DbSet<OrderDetail> OrderDetails { get; set; }
 
         public DbSet<Expense> Expenses { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
     }
 
