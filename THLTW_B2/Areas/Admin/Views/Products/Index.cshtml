@@ -1,0 +1,145 @@
+﻿@model IEnumerable<THLTW_B2.Models.Product>
+
+@{
+    ViewData["Title"] = "Quản lý Kho hàng";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<div class="container-fluid py-3">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h3 class="mb-0 text-dark fw-bold">
+                <i class="fa-solid fa-boxes-stacked text-primary me-2"></i>Kho Dịch Vụ
+            </h3>
+            <p class="text-muted mb-0 mt-1">Tổng cộng: <span class="fw-bold text-primary">@Model.Count()</span> mặt hàng trong kho</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <a asp-controller="Categories" asp-action="Index" class="btn btn-outline-primary shadow-sm rounded-pill px-3 fw-semibold me-2">
+                <i class="fa-solid fa-tags me-1"></i> Quản lý danh mục
+            </a>
+
+            <a asp-action="Create" class="btn btn-primary shadow-sm rounded-pill px-4 fw-semibold">
+                <i class="fa-solid fa-plus me-2"></i> Thêm sản phẩm mới
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4 rounded-4">
+        <div class="card-body p-3">
+            <form asp-action="Index" method="get">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0 rounded-start-pill ps-4">
+                                <i class="fa-solid fa-magnifying-glass text-muted"></i>
+                            </span>
+                            <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" class="form-control bg-light border-0 py-2" placeholder="Tìm tên sản phẩm...">
+                            <button type="submit" class="btn btn-primary rounded-end-pill px-4">Tìm kiếm</button>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(ViewData["CurrentFilter"]?.ToString()))
+                    {
+                        <div class="col-md-auto">
+                            <a asp-action="Index" class="btn btn-light rounded-pill px-3">Xóa lọc</a>
+                        </div>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+                <thead class="bg-light" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <tr>
+                        <th class="ps-4 fw-bold text-secondary border-0 py-3">Sản phẩm</th>
+                        <th class="fw-bold text-secondary border-0 py-3">Phân loại</th>
+                        <th class="text-end fw-bold text-secondary border-0 py-3">Giá bán</th>
+                        <th class="text-center fw-bold text-secondary border-0 py-3">Tồn kho</th>
+                        <th class="text-center fw-bold text-secondary border-0 py-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fa-solid fa-box-open fa-3x mb-3 opacity-50"></i>
+                                    <h5>Không tìm thấy sản phẩm</h5>
+                                    <p>Thử tìm kiếm với từ khóa khác hoặc thêm mới sản phẩm.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-3 d-flex justify-content-center align-items-center me-3" style="width: 45px; height: 45px;">
+                                            <i class="fa-solid fa-box-open fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark">@item.Name</h6>
+                                            <small class="text-muted">ĐVT: @item.Unit</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-2 fw-normal">
+                                        <i class="fa-solid fa-tag me-1 small"></i> @item.Category.Name
+                                    </span>
+                                </td>
+
+                                <td class="text-end fw-bold text-dark fs-6">
+                                    @item.Price.ToString("N0") <span class="text-muted fw-normal fs-7">đ</span>
+                                </td>
+
+                                <td class="text-center">
+                                    @if (item.StockQuantity > 10)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-semibold">
+                                            @item.StockQuantity
+                                        </span>
+                                    }
+                                    else if (item.StockQuantity > 0)
+                                    {
+                                        <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2 fw-semibold">
+                                            @item.StockQuantity (Sắp hết)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2 fw-semibold">
+                                            Hết hàng
+                                        </span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="btn-group shadow-sm rounded-pill bg-white overflow-hidden border">
+                                        <a asp-action="Edit" asp-route-id="@item.ProductId" class="btn btn-white btn-sm px-3 text-primary border-end" title="Sửa">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </a>
+                                        <a asp-action="Details" asp-route-id="@item.ProductId" class="btn btn-white btn-sm px-3 text-info border-end" title="Chi tiết">
+                                            <i class="fa-solid fa-circle-info"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@item.ProductId" class="btn btn-white btn-sm px-3 text-danger" title="Xóa">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

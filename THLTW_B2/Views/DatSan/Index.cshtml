@@ -1,0 +1,292 @@
+﻿@{
+    ViewData["Title"] = "Đặt Sân Bóng Bao Trọn";
+}
+
+@section Styles {
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    <style>
+        .pitch-card {
+            transition: 0.2s;
+        }
+
+            .pitch-card:hover {
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                transform: translateY(-2px);
+            }
+        /* Trang trí cho Lịch */
+        #calendar {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+            height: 100%;
+        }
+
+        .fc-event {
+            cursor: pointer;
+            border: none;
+            padding: 2px 4px;
+            font-weight: 500;
+        }
+
+        .fc-daygrid-day:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+    </style>
+}
+
+<div class="container-fluid px-5 mt-4 mb-5">
+    <div class="row mb-3 text-center">
+        <div class="col-12">
+            <h2 class="fw-bold text-uppercase"><i class="fa-solid fa-calendar-check text-primary me-2"></i>Hệ thống Đặt Sân Trực Tuyến</h2>
+            <p class="text-muted">Bao trọn sân, giữ giờ ngay lập tức</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow border-0 h-100">
+                <div class="card-header bg-dark text-white fw-bold py-3">
+                    <i class="fa-solid fa-pen-to-square me-2 text-info"></i>Thông Tin Đặt Sân
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="fa-solid fa-hand-pointer me-1"></i> Mẹo: Bạn có thể bấm vào lịch bên cạnh để chọn ngày nhanh!
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn ngày <span class="text-danger">*</span></label>
+                        <input type="date" id="dateInput" class="form-control" onchange="autoLoadPitches()">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Khung giờ sân <span class="text-danger">*</span></label>
+                        <select id="timeSlotInput" class="form-select" onchange="autoLoadPitches()">
+                            <option value="">-- Chọn khung giờ --</option>
+                            <option value="06:00 - 07:30">06:00 - 07:30</option>
+                            <option value="07:30 - 09:00">07:30 - 09:00</option>
+                            <option value="16:00 - 17:30">16:00 - 17:30</option>
+                            <option value="17:30 - 19:00">17:30 - 19:00</option>
+                            <option value="19:00 - 20:30">19:00 - 20:30</option>
+                            <option value="20:30 - 22:00">20:30 - 22:00</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Họ và Tên <span class="text-danger">*</span></label>
+                        <input type="text" id="nameInput" class="form-control" placeholder="VD: Nguyễn Văn A">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+                        <input type="text" id="phoneInput" class="form-control" placeholder="09xxxxxxxx">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ghi chú thêm</label>
+                        <textarea id="noteInput" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="alert mb-4 py-2" style="background-color: #d1e7dd; border: 1px solid #badbcc; color: #0f5132;">
+                        <strong id="selectedPitchName">Chưa chọn sân</strong><br>
+                        <span class="fw-bold text-dark fs-5" id="selectedPitchPriceDisplay">0 đ</span>
+                        <input type="hidden" id="hiddenPitchId" value="" />
+                        <input type="hidden" id="hiddenPitchPrice" value="0" />
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-info text-white fw-bold" onclick="checkAvailablePitches()">Chọn Sân</button>
+                        <button id="btnXacNhan" class="btn btn-primary fw-bold px-4">Xác Nhận</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8 mb-4">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pitchModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold">Sân trống khả dụng</h5>
+                <button type="button" class="btn-close btn-close-white" onclick="pitchModalObj.hide()"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <p class="text-muted small">Thời gian: <strong id="modalTimeInfo"></strong></p>
+                <div id="pitchListContainer" class="list-group"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="paymentModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-credit-card me-2"></i>Thanh toán tiền cọc</h5>
+                <button type="button" class="btn-close btn-close-white" onclick="paymentModalObj.hide()"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="mb-2">Vui lòng thanh toán tiền cọc (30%) để giữ sân:</p>
+                <h3 class="text-danger fw-bold mb-3" id="depositAmount">0 đ</h3>
+                <div class="bg-light p-3 rounded mb-3 border">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=ThanhToanCocDatSan" alt="QR" class="img-fluid shadow-sm mb-2">
+                    <p class="small text-muted mb-0">Nội dung CK: <strong id="paymentContent"></strong></p>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-secondary px-4 me-2" onclick="paymentModalObj.hide()">Hủy bỏ</button>
+                <button type="button" class="btn btn-success px-4 fw-bold" onclick="confirmPaymentAndBooking()">
+                    <i class="fa-solid fa-check-circle me-1"></i>Tôi đã chuyển khoản
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/vi.js'></script>
+
+    <script>
+        let pitchModalObj, paymentModalObj, pendingBookingData = null;
+
+        // --- KHỞI TẠO LỊCH ---
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek', // Hiển thị theo tuần dễ nhìn giờ hơn
+                locale: 'vi', // Tiếng Việt
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek' // Cho phép đổi góc nhìn
+                },
+                slotMinTime: '06:00:00', // Bắt đầu từ 6h sáng
+                slotMaxTime: '23:00:00', // Kết thúc lúc 11h đêm
+                events: '/DatSan/GetCalendarEvents', // Gọi API lấy dữ liệu lịch
+
+                // MỘT CHẠM ĐIỀN FORM: Khi bấm vào 1 ô trống trên lịch
+                dateClick: function(info) {
+                    const selectedDate = info.dateStr.split('T')[0]; // Lấy phần ngày (YYYY-MM-DD)
+                    document.getElementById('dateInput').value = selectedDate;
+
+                    // Nháy viền xanh báo hiệu cho khách biết đã điền thành công
+                    const dateInput = document.getElementById('dateInput');
+                    dateInput.style.boxShadow = "0 0 10px #0d6efd";
+                    setTimeout(() => dateInput.style.boxShadow = "none", 800);
+
+                    autoLoadPitches();
+                }
+            });
+            calendar.render();
+        });
+
+        // --- CÁC HÀM XỬ LÝ ĐẶT SÂN ---
+        function autoLoadPitches() {
+            const time = document.getElementById("timeSlotInput").value;
+            const date = document.getElementById("dateInput").value;
+            if (date && time) checkAvailablePitches(); // Tự động load nếu đủ 2 thông tin
+        }
+
+        async function checkAvailablePitches() {
+            const date = document.getElementById("dateInput").value;
+            const time = document.getElementById("timeSlotInput").value;
+            if (!date || !time) return alert("Vui lòng chọn Ngày và Khung giờ!");
+
+            document.getElementById("modalTimeInfo").innerText = `${date} | ${time}`;
+            const container = document.getElementById("pitchListContainer");
+            container.innerHTML = `<div class="text-center text-muted my-4"><i class="fa-solid fa-spinner fa-spin fa-2x mb-2"></i><br>Đang tải...</div>`;
+
+            if (!pitchModalObj) pitchModalObj = new bootstrap.Modal(document.getElementById('pitchModal'));
+            pitchModalObj.show();
+
+            try {
+                const response = await fetch(`/DatSan/GetAvailablePitches?date=${date}&timeSlot=${time}`);
+                const pitches = await response.json();
+                container.innerHTML = "";
+
+                if (pitches.length === 0) {
+                    container.innerHTML = `<div class="alert alert-warning">Chưa có dữ liệu sân.</div>`; return;
+                }
+
+                pitches.forEach(pitch => {
+                    const formattedPrice = pitch.price.toLocaleString('vi-VN');
+                    if (pitch.isBooked) {
+                        container.innerHTML += `
+                            <button class="list-group-item d-flex justify-content-between mb-2 rounded border bg-light text-muted" disabled style="cursor: not-allowed;">
+                                <span><del class="fw-bold">${pitch.name}</del> <span class="small text-danger ms-1">(Đã hết chỗ)</span></span>
+                                <span class="badge bg-secondary">${formattedPrice} đ</span>
+                            </button>`;
+                    } else {
+                        container.innerHTML += `
+                            <button class="list-group-item d-flex justify-content-between mb-2 rounded border shadow-sm" onclick="selectPitch(${pitch.id}, '${pitch.name}', ${pitch.price})">
+                                <span class="fw-bold text-primary">${pitch.name}</span>
+                                <span class="badge bg-success" style="font-size: 0.9rem;">${formattedPrice} đ</span>
+                            </button>`;
+                    }
+                });
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-danger">Lỗi kết nối máy chủ!</div>`;
+            }
+        }
+
+        function selectPitch(id, name, price) {
+            document.getElementById("selectedPitchName").innerText = "Đã chọn: " + name;
+            document.getElementById("selectedPitchPriceDisplay").innerText = price.toLocaleString('vi-VN') + " đ";
+            document.getElementById("hiddenPitchId").value = id;
+            document.getElementById("hiddenPitchPrice").value = price;
+            pitchModalObj.hide();
+        }
+
+        document.getElementById("btnXacNhan").addEventListener("click", function (e) {
+            e.preventDefault();
+            const name = document.getElementById("nameInput").value;
+            const date = document.getElementById("dateInput").value;
+            const time = document.getElementById("timeSlotInput").value;
+            const phone = document.getElementById("phoneInput").value;
+            const pitchId = document.getElementById("hiddenPitchId").value;
+            const price = document.getElementById("hiddenPitchPrice").value;
+
+            if (!name || !date || !time || !phone || !pitchId) return alert("Vui lòng điền đủ thông tin và chọn sân!");
+
+            pendingBookingData = { pitchId, date, time, price, note: document.getElementById("noteInput").value, phone };
+
+            const deposit = parseInt(price) * 0.3;
+            document.getElementById("depositAmount").innerText = deposit.toLocaleString('vi-VN') + " đ";
+            document.getElementById("paymentContent").innerText = "DS " + phone + " " + date.replace(/-/g, '').slice(-4);
+
+            paymentModalObj = new bootstrap.Modal(document.getElementById('paymentModal'));
+            paymentModalObj.show();
+        });
+
+        async function confirmPaymentAndBooking() {
+            if (!pendingBookingData) return;
+            const { pitchId, date, time, price, note } = pendingBookingData;
+            const formData = new FormData();
+            formData.append('soccerFieldId', pitchId);
+            formData.append('date', date);
+            formData.append('timeSlot', time);
+            formData.append('price', price);
+            formData.append('note', note);
+
+            const btn = document.querySelector("#paymentModal .btn-success");
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang xử lý...`;
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/DatSan/TaoDonDatSan', { method: 'POST', body: formData });
+                const result = await response.json();
+                if (result.success) {
+                    alert("Đặt sân thành công!");
+                    window.location.reload();
+                } else alert("Lỗi: " + result.message);
+            } catch (err) {
+                alert("Lỗi kết nối!");
+            } finally {
+                btn.innerHTML = originalHtml; btn.disabled = false;
+            }
+        }
+    </script>
+}

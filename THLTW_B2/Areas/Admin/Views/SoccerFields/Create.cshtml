@@ -1,0 +1,87 @@
+﻿@model THLTW_B2.Models.SoccerField
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-4"><i class="bi bi-plus-circle me-2 text-primary"></i>Thêm Sân Bóng Mới</h4>
+
+                    <form asp-action="Create" enctype="multipart/form-data" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-bold small text-uppercase"></label>
+                            <input asp-for="Name" class="form-control bg-light border-0" placeholder="VD: Sân 5 - Số 1" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Type" class="form-label fw-bold small text-uppercase"></label>
+                                <select asp-for="Type" class="form-select bg-light border-0">
+                                    <option value="5 người">Sân 5 người</option>
+                                    <option value="7 người">Sân 7 người</option>
+                                </select>
+                                <span asp-validation-for="Type" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="PricePerHour" class="form-label fw-bold small text-uppercase"></label>
+                                <div class="input-group">
+                                    <input asp-for="PricePerHour" class="form-control bg-light border-0" type="number" />
+                                    <span class="input-group-text bg-light border-0">VND/h</span>
+                                </div>
+                                <span asp-validation-for="PricePerHour" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase">Hình ảnh sân bóng</label>
+                            <input type="file" name="file" id="imageUpload" class="form-control bg-light border-0" accept="image/*" />
+                            <div class="form-text">Lưu ý: Chỉ chấp nhận các định dạng ảnh (.jpg, .png, .webp)</div>
+
+                            <div class="mt-2 text-center">
+                                <img id="imagePreview" src="#" alt="Xem trước ảnh" class="img-thumbnail d-none" style="max-height: 200px;" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold small text-uppercase"></label>
+                            <textarea asp-for="Description" class="form-control bg-light border-0" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive" checked>
+                                <label class="form-check-label fw-bold small text-uppercase" asp-for="IsActive">Sẵn sàng cho thuê</label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm">
+                                <i class="bi bi-save me-2"></i> Lưu Thông Tin Sân
+                            </button>
+                            <a asp-action="Index" class="btn btn-link text-secondary text-decoration-none small">Hủy bỏ</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('imageUpload').onchange = function (evt) {
+            const [file] = this.files;
+            if (file) {
+                const preview = document.getElementById('imagePreview');
+                preview.src = URL.createObjectURL(file);
+                preview.classList.remove('d-none');
+            }
+        }
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

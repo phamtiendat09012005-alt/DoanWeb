@@ -1,0 +1,46 @@
+﻿@model THLTW_B2.Models.EditRolesViewModel
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-primary text-white py-3 text-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-shield-shaded me-2"></i>THIẾT LẬP PHÂN QUYỀN</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-controller="Employee" asp-action="EditRoles" method="post">
+
+                        <div asp-validation-summary="All" class="text-danger mb-3 small"></div>
+
+                        <input type="hidden" asp-for="UserId" />
+                        <input type="hidden" asp-for="UserName" />
+
+                        <div class="mb-4 text-center">
+                            <label class="form-label text-muted small fw-bold text-uppercase">Tài khoản nhân viên</label>
+                            <h4 class="text-primary fw-bold">@Model.UserName</h4>
+                            <hr />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold"><i class="bi bi-person-gear me-1"></i>Chọn vai trò mới</label>
+                            <select asp-for="RoleName" class="form-select form-select-lg border-primary shadow-sm">
+                                <option value="Employee">Nhân Viên (Quản lý sân, Duyệt đơn)</option>
+                                <option value="Admin">Quản Trị Viên (Toàn quyền hệ thống)</option>
+                                <option value="User">Khách Hàng (Hạ cấp tài khoản)</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold rounded-pill shadow">
+                                <i class="bi bi-check2-circle me-1"></i> Lưu Thay Đổi
+                            </button>
+                            <a asp-controller="Employee" asp-action="Index" class="btn btn-link text-secondary text-decoration-none">
+                                <i class="bi bi-arrow-left me-1"></i> Hủy bỏ và quay lại
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

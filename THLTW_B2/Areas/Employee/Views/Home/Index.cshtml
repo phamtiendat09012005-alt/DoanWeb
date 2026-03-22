@@ -1,0 +1,18 @@
+﻿@{
+    Layout = null; // Tạm thời chưa dùng khung giao diện
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trang Quản Trị - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+</head>
+<body class="bg-dark text-white p-5">
+    <h1>CHÀO MỪNG NHÂN VIÊN TRỰC SÂN ĐÃ ĐĂNG NHẬP</h1>
+    <p>Đây là khu vực tuyệt mật chỉ dành cho Employee của hệ thống QLSBMini.</p>
+
+    <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="~/" method="post">
+        <button type="submit" class="btn btn-danger">Đăng xuất</button>
+    </form>
+</body>
+</html>

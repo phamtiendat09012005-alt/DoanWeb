@@ -1,0 +1,68 @@
+﻿@model IEnumerable<THLTW_B2.Models.Category>
+
+@{
+    ViewData["Title"] = "Quản lý Danh mục";
+}
+
+<div class="container-fluid py-3">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h4 class="mb-0 text-dark fw-bold">
+                <i class="bi bi-tags-fill text-primary me-2"></i>Danh Mục Sản Phẩm
+            </h4>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a asp-controller="Products" asp-action="Index" class="btn btn-light rounded-pill px-3 border me-2 shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i> Quay lại Kho
+            </a>
+            <a asp-action="Create" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold">
+                <i class="bi bi-plus-lg me-1"></i> Thêm nhóm mới
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr class="small text-uppercase fw-bold text-secondary">
+                        <th class="ps-4 py-3">Tên danh mục</th>
+                        <th>Mô tả</th>
+                        <th class="text-center">Số lượng món</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-bold text-primary">@item.Name</td>
+                            <td class="text-muted small">@item.Description</td>
+                            <td class="text-center">
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                                    <i class="bi bi-box-seam me-1"></i> @(item.Products?.Count ?? 0) sản phẩm
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="Edit" asp-route-id="@item.CategoryId" class="btn btn-sm btn-light rounded-circle text-warning mx-1 shadow-sm" title="Sửa">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.CategoryId" class="btn btn-sm btn-light rounded-circle text-danger mx-1 shadow-sm"
+                                   onclick="return confirm('Xóa danh mục này có thể ảnh hưởng đến các sản phẩm bên trong. Bạn chắc chắn chứ?')" title="Xóa">
+                                    <i class="bi bi-trash-fill"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,56 @@
+﻿@model IEnumerable<THLTW_B2.Models.SoccerField>
+
+<div class="container-fluid py-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h3 class="fw-bold text-dark"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Hệ Thống Sân Bóng</h3>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
+                <i class="bi bi-plus-lg me-2"></i> Thêm sân mới
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var item in Model)
+        {
+            <div class="col-sm-6 col-lg-4 col-xl-3">
+                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative transition-hover">
+                    <div style="height: 180px; overflow: hidden; background-color: #f8f9fa;">
+                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                        {
+                            <img src="@item.ImageUrl" class="w-100 h-100 object-fit-cover" alt="@item.Name" />
+                        }
+                        else
+                        {
+                            <div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                <i class="bi bi-image fs-1 opacity-25"></i>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="card-body px-4 pb-4">
+                        <span class="badge @(item.Type == "5 người" ? "bg-info" : "bg-warning text-dark") rounded-pill mb-2">@item.Type</span>
+                        <h5 class="card-title fw-bold mb-1">@item.Name</h5>
+                        <p class="text-primary fw-bold mb-3">@item.PricePerHour.ToString("N0") VNĐ/giờ</p>
+
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                            <span class="badge @(item.IsActive ? "bg-success" : "bg-danger") bg-opacity-10 text-@(item.IsActive ? "success" : "danger") rounded-pill px-2">
+                                @(item.IsActive ? "Hoạt động" : "Bảo trì")
+                            </span>
+                            <div class="btn-group">
+                                <a asp-action="Edit" asp-route-id="@item.FieldId" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.FieldId" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
