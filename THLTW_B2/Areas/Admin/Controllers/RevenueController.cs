@@ -21,17 +21,24 @@ namespace THLTW_B2.Areas.Admin.Controllers
             int m = month ?? DateTime.Now.Month;
             int y = year ?? DateTime.Now.Year;
 
-            // 1. TÍNH TỔNG THU (Từ các đơn Đã hoàn thành trong tháng)
+            // 1. TÍNH DOANH THU THUÊ SÂN (Từ các đơn Đã hoàn thành trong tháng)
             var completedBookings = await _context.Bookings
                 .Where(b => b.Status == "Đã hoàn thành" && b.BookingDate.Month == m && b.BookingDate.Year == y)
                 .Include(b => b.User)
                 .Include(b => b.SoccerField)
                 .ToListAsync();
 
-            var completedMatches = await _context.MatchRequests
-                .Where(x => x.Status == "Đã hoàn thành" && x.MatchDate.Month == m && x.MatchDate.Year == y)
+            decimal revenueFromBookings = completedBookings.Sum(b => b.TotalPrice);
+
+            // ==========================================
+            // ĐÃ SỬA: 2. TÍNH DOANH THU TỪ TIỀN CỌC KÈO
+            // ==========================================
+            // Lấy tất cả các kèo đã được cọc (IsDeposited == true) trong tháng
+            var depositedMatches = await _context.MatchRequests
+                .Where(x => x.IsDeposited == true && x.MatchDate.Month == m && x.MatchDate.Year == y)
                 .ToListAsync();
 
+<<<<<<< HEAD
             // ---------------------------------------------------------
             // [MỚI THÊM NÈ SẾP]: Lấy doanh thu từ Cửa hàng (Hóa đơn đã thanh toán)
             // ---------------------------------------------------------
@@ -44,8 +51,23 @@ namespace THLTW_B2.Areas.Admin.Controllers
                                  + completedMatches.Sum(x => 100000) // Giả sử kèo ghép thu phí 100k
                                  + completedOrders.Sum(o => o.TotalAmount); // <--- TIỀN BÁN NƯỚC CHẢY VÀO ĐÂY!
                                                                             // ---------------------------------------------------------
+=======
+            // Lấy TỔNG TIỀN CỌC của người tạo kèo (Host)
+            decimal hostDepositRevenue = depositedMatches.Sum(x => x.TienCoc);
+>>>>>>> fad9f15ef144123f76c4ba2f33fb5552d6ba0011
 
-            // 2. TÍNH TỔNG CHI
+            // Lấy TỔNG TIỀN CỌC của người nhận kèo (Opponent) - Giả sử mặc định là 100k như giao diện QR
+            // (Nếu sau này bạn có cột TienCocNhanKeo thì thay vào đây)
+            var opponentDepositedMatchesCount = depositedMatches.Count(x => x.IsOpponentDeposited == true);
+            decimal opponentDepositRevenue = opponentDepositedMatchesCount * 100000;
+
+            // TỔNG CỘNG DOANH THU CÁP KÈO
+            decimal totalMatchRevenue = hostDepositRevenue + opponentDepositRevenue;
+
+            // TỔNG DOANH THU = Thuê sân + Cọc kèo
+            decimal totalRevenue = revenueFromBookings + totalMatchRevenue;
+
+            // 3. TÍNH TỔNG CHI
             var expenses = await _context.Expenses
                 .Where(e => e.ExpenseDate.Month == m && e.ExpenseDate.Year == y)
                 .OrderByDescending(e => e.ExpenseDate)
@@ -53,7 +75,7 @@ namespace THLTW_B2.Areas.Admin.Controllers
 
             decimal totalExpense = expenses.Sum(e => e.Amount);
 
-            // 3. ĐÓNG GÓI DỮ LIỆU
+            // 4. ĐÓNG GÓI DỮ LIỆU
             var vm = new RevenueDashboardViewModel
             {
                 TotalRevenue = totalRevenue,
@@ -71,6 +93,10 @@ namespace THLTW_B2.Areas.Admin.Controllers
 
             ViewBag.SelectedMonth = m;
             ViewBag.SelectedYear = y;
+
+            // Gửi riêng dữ liệu cọc kèo ra View để hiển thị nếu cần
+            ViewBag.DoanhThuThueSan = revenueFromBookings;
+            ViewBag.DoanhThuCapKeo = totalMatchRevenue;
 
             return View(vm);
         }

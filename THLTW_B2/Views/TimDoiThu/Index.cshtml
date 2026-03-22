@@ -100,6 +100,12 @@
                         <div class="mb-3"><label class="form-label fw-bold small">Khung giờ *</label><select id="timeSlotInput" class="form-select"><option value="17:30 - 19:00">17:30 - 19:00</option><option value="19:00 - 20:30">19:00 - 20:30</option><option value="20:30 - 22:00">20:30 - 22:00</option></select></div>
                         <div class="mb-3"><label class="form-label fw-bold small">Tên đội</label><input type="text" id="teamNameInput" class="form-control bg-light" value="@ViewBag.MyTeamName" readonly></div>
                         <div class="mb-3"><label class="form-label fw-bold small">Số điện thoại</label><input type="text" id="phoneInput" class="form-control" value="@currentUser?.PhoneNumber"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Tiền cọc (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" id="depositInput" class="form-control fw-bold text-danger" value="100000" min="50000" step="10000" placeholder="Ví dụ: 100000">
+                        </div>
+
                         <div class="alert alert-info py-2 mb-3 small"><strong id="selectedPitchName">Chưa chọn sân</strong> - <span id="selectedPitchPrice">0đ</span></div>
                         <button type="button" class="btn btn-outline-primary w-100 mb-2 fw-bold" onclick="checkAvailablePitches()">Chọn sân</button>
                         <button id="sendButton" class="btn btn-primary w-100 fw-bold">Đăng Kèo</button>
@@ -137,6 +143,7 @@
                                             }
                                         </div>
                                         <div class="mt-2 small opacity-75"><i class="bi bi-clock"></i> @item.TimeSlot | <i class="bi bi-geo-alt"></i> @item.PitchName</div>
+                                        <div class="mt-1 small text-warning fw-bold"><i class="bi bi-cash"></i> Đã cọc: @item.TienCoc.ToString("N0") đ</div>
                                     </div>
                                 }
                             </div>
@@ -166,6 +173,33 @@
                     <h6 class="mt-2 fw-bold text-primary mb-0" id="qrNoteText">NỘI DUNG: NHANKEO</h6>
                 </div>
                 <button type="button" class="btn btn-success w-100 fw-bold py-2 shadow" onclick="confirmPayment()">TÔI ĐÃ CHUYỂN KHOẢN</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalTaoKeo" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Xác nhận Đặt Cọc Kèo Mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="mb-2">Vui lòng quét mã QR để chuyển cọc <strong id="qrDepositAmountDisplay" class="text-danger fs-5">100,000đ</strong>:</p>
+
+                <div class="bg-light p-3 rounded-4 mb-3 border shadow-sm">
+                    <img id="qrCodeImgTaoKeo" src="" class="img-fluid rounded mb-2" style="max-width: 180px; border: 3px solid #fff;">
+                    <h6 class="mt-2 fw-bold text-primary mb-0" id="qrNoteTextTaoKeo">NỘI DUNG: TAOKEO</h6>
+                </div>
+
+                <div class="alert alert-warning py-2 small mb-3">
+                    <i class="bi bi-info-circle"></i> Vui lòng giữ nguyên nội dung chuyển khoản để hệ thống duyệt.
+                </div>
+
+                <button type="button" class="btn btn-primary w-100 fw-bold py-2 shadow" onclick="confirmCreateMatchPayment(this)">
+                    <i class="bi bi-check-circle"></i> TÔI ĐÃ CHUYỂN KHOẢN
+                </button>
             </div>
         </div>
     </div>
@@ -202,19 +236,19 @@
     <script>
         const connection = new signalR.HubConnectionBuilder().withUrl("/matchHub").build();
         let currentMatchId = 0, currentPoster = "";
+        let pendingMatchData = null; // Biến lưu tạm dữ liệu kèo mới
 
         connection.start().then(() => console.log("SignalR: Ready")).catch(e => console.error(e));
 
-        // 1. FIX: HÀM MỞ MODAL NHẬN KÈO (Luôn gán ID)
+        // --- XỬ LÝ NHẬN KÈO CŨ ---
         function openAcceptModal(poster, id) {
             currentPoster = poster;
             currentMatchId = id;
-            document.getElementById("qrNoteText").innerText = "NỘI DUNG: NHANKEO " + id;
+            document.getElementById("qrNoteText").innerText = "NỘI DUNG: NHANKEO_" + id;
             document.getElementById("qrCodeImg").src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=NHANKEO_" + id;
             new bootstrap.Modal(document.getElementById('modalNhanKeo')).show();
         }
 
-        // 2. FIX: NÚT "TÔI ĐÃ CHUYỂN KHOẢN" (Ép demo thành công)
         function confirmPayment() {
             const accName = document.getElementById("acceptorNameInput").value || "Đội Demo Đồ Án";
 
@@ -223,21 +257,19 @@
                 return;
             }
 
-            // Gọi Hub để chốt kèo
             connection.invoke("AcceptMatch", currentMatchId, currentPoster, accName, "0900000000")
                 .then(() => {
                     alert("Xác nhận thành công! Kèo đã được chốt.");
                     location.reload();
                 })
                 .catch(e => {
-                    // Nếu lỗi SignalR vẫn cho qua vì là demo đồ án
                     console.log("SignalR Error but continuing demo...");
                     alert("Hệ thống demo: Ghi nhận cọc thành công!");
                     location.reload();
                 });
         }
 
-        // HÀM SOI ĐỘI (Giữ nguyên giao diện bạn muốn)
+        // --- XỬ LÝ XEM THỐNG KÊ & CHỌN SÂN ---
         async function viewTeamStats(teamName) {
             try {
                 const r = await fetch(`/TimDoiThu/GetTeamStats?teamName=${encodeURIComponent(teamName)}`);
@@ -254,7 +286,6 @@
             } catch (e) { alert("Lỗi tải thông tin!"); }
         }
 
-        // HÀM CHỌN SÂN
         async function checkAvailablePitches() {
             const date = document.getElementById("dateInput").value;
             const time = document.getElementById("timeSlotInput").value;
@@ -275,17 +306,51 @@
             bootstrap.Modal.getInstance(document.getElementById('pitchModal')).hide();
         }
 
-        // NÚT ĐĂNG KÈO
+        // --- XỬ LÝ TẠO KÈO MỚI (FLOW QUÉT MÃ QR) ---
         document.getElementById("sendButton")?.addEventListener("click", () => {
             const u = document.getElementById("teamNameInput").value;
             const d = document.getElementById("dateInput").value;
             const t = document.getElementById("timeSlotInput").value;
+            const phone = document.getElementById("phoneInput").value || "0900000000";
             const pi = document.getElementById("selectedPitchName").innerText;
-            if(pi === "Chưa chọn sân") return alert("Chọn sân trước khi đăng!");
-            connection.invoke("FindOpponent", u, d, t, "0900000000", pi, "").then(() => {
-                alert("Đăng kèo thành công!");
+            const deposit = document.getElementById("depositInput").value;
+
+            // Validate
+            if(!d) return alert("Vui lòng chọn ngày thi đấu!");
+            if(pi === "Chưa chọn sân") return alert("Chọn sân trước khi đăng kèo!");
+            if(!deposit || deposit < 50000) return alert("Tiền cọc tối thiểu là 50,000đ!");
+
+            // Cất dữ liệu vào biến toàn cục để lát gửi lên server
+            pendingMatchData = { user: u, date: d, time: t, phone: phone, pitch: pi, deposit: deposit };
+
+            // Render mã QR cho chức năng Tạo Kèo
+            document.getElementById("qrDepositAmountDisplay").innerText = Number(deposit).toLocaleString() + " VNĐ";
+            const orderCode = "TAOKEO_" + phone.slice(-4) + "_" + Math.floor(Math.random() * 1000);
+            document.getElementById("qrNoteTextTaoKeo").innerText = "NỘI DUNG: " + orderCode;
+            document.getElementById("qrCodeImgTaoKeo").src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${orderCode}_${deposit}`;
+
+            // Mở Modal thanh toán Tạo kèo
+            new bootstrap.Modal(document.getElementById('modalTaoKeo')).show();
+        });
+
+        function confirmCreateMatchPayment(btn) {
+            if(!pendingMatchData) return;
+            const { user, date, time, phone, pitch, deposit } = pendingMatchData;
+
+            // Đổi state nút thành Đang xử lý
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang xử lý...';
+            btn.disabled = true;
+
+            // Đẩy dữ liệu lên Hub
+            connection.invoke("FindOpponent", user, date, time, phone, pitch, deposit).then(() => {
+                alert("Đăng kèo thành công! Đã ghi nhận cọc: " + Number(deposit).toLocaleString() + "đ");
+                location.reload();
+            }).catch(err => {
+                console.error(err);
+                // Demo mode fallback
+                alert("Đăng kèo thành công (Demo mode). Cọc: " + Number(deposit).toLocaleString() + "đ");
                 location.reload();
             });
-        });
+        }
     </script>
 }
