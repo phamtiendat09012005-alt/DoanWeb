@@ -24,4 +24,17 @@
         public string Password { get; set; }
         public string SelectedRole { get; set; }
     }
+
+    public class BookingHistoryViewModel
+    {
+        public int Id { get; set; }
+        public DateTime Date { get; set; }
+        public string TimeSlot { get; set; }
+        public string PitchName { get; set; }
+        public string CustomerName { get; set; } // Tên người đặt hoặc Đội chủ nhà
+        public string? OpponentName { get; set; } // Chỉ dành cho kèo ghép
+        public string Type { get; set; } // "Đặt sân lẻ" hoặc "Kèo ghép"
+        public string Status { get; set; }
+        public bool IsMatch { get; set; } // Phân loại để hiển thị icon
+    }
 }

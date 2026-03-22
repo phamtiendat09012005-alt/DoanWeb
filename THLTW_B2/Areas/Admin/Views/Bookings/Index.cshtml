@@ -1,67 +1,211 @@
-﻿@model IEnumerable<THLTW_B2.Models.Booking>
+﻿@using THLTW_B2.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<THLTW_B2.Models.ApplicationUser> UserManager
+@{
+    ViewData["Title"] = "Quản Lý Đặt Sân";
+    var currentUser = await UserManager.GetUserAsync(User);
+}
+
+@section Styles {
+    <style>
+        /* TỔNG QUAN TABS */
+        .nav-pills .nav-link {
+            color: #6c757d;
+            border: none;
+            padding: 10px 25px;
+            transition: 0.3s;
+            font-weight: 600;
+        }
+
+            .nav-pills .nav-link.active {
+                background-color: #0d6efd;
+                color: white !important;
+                box-shadow: 0 4px 12px rgba(13,110,253,0.3);
+            }
+
+        /* FIX LOGO HÌNH TRÒN VÀ KHOẢNG CÁCH */
+        #statLogo {
+            width: 140px !important;
+            height: 140px !important;
+            object-fit: cover !important;
+            border-radius: 50% !important; /* ÉP TRÒN TRỊA */
+            border: 6px solid #fff !important;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
+            background-color: #fff !important;
+        }
+
+        .stat-header-cover {
+            background: linear-gradient(to right, #212529, #343a40);
+            height: 120px;
+            position: relative;
+        }
+
+        .logo-container {
+            position: relative;
+            margin-top: -75px; /* Đẩy logo lên giữa vạch phân cách */
+            z-index: 5;
+            display: inline-block;
+        }
+
+        .team-name-display {
+            margin-top: 15px; /* Tránh bị logo đè */
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+
+        /* CARD CHỈ SỐ FIFA */
+        .fifa-card {
+            border-radius: 15px;
+            padding: 20px 10px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .bg-win {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .bg-draw {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+        }
+
+        .bg-loss {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+    </style>
+}
 
 <div class="container-fluid py-4">
     <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-header bg-white py-3">
-            <h4 class="fw-bold mb-0 text-primary"><i class="bi bi-calendar-check me-2"></i>Quản Lý Đặt Sân</h4>
+        <div class="card-header bg-white py-3 border-bottom-0">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <h4 class="fw-bold mb-2 mb-md-0 text-primary"><i class="bi bi-calendar-check me-2"></i>Quản Lý Lịch Sân</h4>
+                <ul class="nav nav-pills bg-light rounded-pill p-1 shadow-sm" id="pills-tab" role="tablist">
+                    <button class="nav-link active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#tab-booked">Lịch đã đặt</button>
+                    <button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#tab-finished">Đã hoàn thành</button>
+                    <button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#tab-matches">Lịch kèo ghép</button>
+                </ul>
+            </div>
         </div>
 
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success m-3">@TempData["SuccessMessage"]</div>
-        }
-
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">Mã Đơn</th>
-                            <th>Khách Hàng</th>
-                            <th>Sân Bóng</th>
-                            <th>Thời Gian</th>
-                            <th>Tổng Tiền</th>
-                            <th>Trạng Thái</th>
-                            <th class="text-center">Hành Động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="ps-4 fw-bold text-secondary">#BK@(item.Id.ToString("D4"))</td>
-                                <td>
-                                    <div class="fw-bold">@(item.User?.FullName ?? "N/A")</div>
-                                    <small class="text-muted">@(item.User?.PhoneNumber)</small>
-                                </td>
-                                <td><span class="badge bg-info text-dark">@(item.SoccerField?.Name)</span></td>
-                                <td>
-                                    <div><i class="bi bi-calendar-event me-1"></i>@item.BookingDate.ToString("dd/MM/yyyy")</div>
-                                    <small class="fw-bold text-dark">@item.TimeSlot</small>
-                                </td>
-                                <td class="fw-bold text-success">@item.TotalPrice.ToString("N0") ₫</td>
-                                <td>
-                                    @{
-                                        var badgeClass = item.Status switch
-                                        {
-                                            "Đã cọc" => "bg-primary",
-                                            "Đã hoàn thành" => "bg-success",
-                                            "Đã hủy" => "bg-danger",
-                                            _ => "bg-secondary"
-                                        };
-                                    }
-                                    <span class="badge @badgeClass rounded-pill px-3">@item.Status</span>
-                                </td>
-                                <td class="text-center">
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                        <i class="bi bi-pencil-square me-1"></i> Xử lý
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <div class="card-body p-0 mt-2">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="tab-booked">@await Html.PartialAsync("_BookingTablePartial", (List<BookingHistoryViewModel>)ViewBag.AllBookings)</div>
+                <div class="tab-pane fade" id="tab-finished">@await Html.PartialAsync("_BookingTablePartial", (List<BookingHistoryViewModel>)ViewBag.Completed)</div>
+                <div class="tab-pane fade" id="tab-matches">@await Html.PartialAsync("_BookingTablePartial", (List<BookingHistoryViewModel>)ViewBag.MatchRequests)</div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalNhanKeoAdmin" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-success text-white py-3">
+                <h5 class="modal-title fw-bold"><i class="bi bi-qr-code-scan me-2"></i>Xác nhận Thanh toán cọc</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="mb-3">Vui lòng quét mã QR để thu tiền cọc <strong class="text-danger">100,000đ</strong> cho mã kèo này:</p>
+
+                <div class="bg-light p-3 rounded-4 mb-3 border shadow-sm d-inline-block">
+                    <img id="qrCodeImg" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=NHANKEO"
+                         class="img-fluid rounded" style="max-width: 200px; border: 5px solid white;">
+                    <h5 class="mt-3 fw-bold text-primary mb-0" id="qrNoteText">NỘI DUNG: NHAN KEO</h5>
+                </div>
+
+                <div class="alert alert-warning py-3 small text-start border-0 shadow-sm mt-2">
+                    <i class="bi bi-info-circle-fill me-2 text-warning"></i>
+                    <strong>Lưu ý:</strong> Admin chỉ bấm "Xác nhận đã thu tiền" sau khi đã kiểm tra biến động số dư trong tài khoản ngân hàng thành công.
+                </div>
+            </div>
+            <div class="modal-footer border-0 pb-4 justify-content-center">
+                <button type="button" class="btn btn-light rounded-pill px-4 me-2 border" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow" onclick="confirmAdminAccept()">
+                    <i class="bi bi-check-circle me-1"></i> Xác nhận Đã thu tiền
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="teamStatsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 550px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="stat-header-cover">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" style="z-index: 100;"></button>
+            </div>
+            <div class="modal-body px-4 pb-5 pt-0 text-center">
+                <div class="logo-container">
+                    <img id="statLogo" src="/images/default-logo.png" alt="Logo">
+                </div>
+                <h2 class="team-name-display" id="statTeamName">TÊN ĐỘI BÓNG</h2>
+                <p class="text-muted fst-italic mb-4" id="statDescription">"Khẩu hiệu"</p>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-4"><div class="fifa-card bg-win"><h3>@*JS sẽ điền*@ <span id="statWins">0</span></h3><small class="fw-bold">THẮNG</small></div></div>
+                    <div class="col-4"><div class="fifa-card bg-draw"><h3><span id="statDraws">0</span></h3><small class="fw-bold">HÒA</small></div></div>
+                    <div class="col-4"><div class="fifa-card bg-loss"><h3><span id="statLosses">0</span></h3><small class="fw-bold">THUA</small></div></div>
+                </div>
+
+                <div class="card border-0 bg-light rounded-4 p-4 text-start shadow-sm">
+                    <div class="d-flex justify-content-between mb-2"><span class="small fw-bold text-dark">Tỉ lệ thắng</span><span class="small fw-bold text-primary" id="statWinRateText">0%</span></div>
+                    <div class="progress mb-4" style="height: 10px; border-radius: 10px;"><div class="progress-bar progress-bar-striped progress-bar-animated" id="statWinRateBar" style="width: 0%"></div></div>
+                    <div class="d-flex justify-content-between align-items-center mb-3"><span class="small fw-bold text-dark">Điểm FairPlay</span><span class="badge rounded-pill px-3 py-2 bg-success shadow-sm" id="statFairPlay">100/100</span></div>
+                    <hr>
+                    <span class="fw-bold d-block mb-2 small text-muted"><i class="bi bi-people-fill me-2"></i>Đội hình:</span>
+                    <div id="statMembers" class="p-3 bg-white border rounded-3 text-muted small">Đang tải...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder().withUrl("/matchHub").build();
+        let currentMatchId, currentPosterName;
+
+        connection.start().then(() => console.log("SignalR Admin Connected OK")).catch(err => console.error(err));
+
+        function openAcceptModal(posterName, matchId) {
+            currentMatchId = matchId;
+            currentPosterName = posterName;
+            document.getElementById("qrNoteText").innerText = "NỘI DUNG: NHANKEO " + matchId;
+            document.getElementById("qrCodeImg").src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=NHANKEO_" + matchId;
+            var modal = new bootstrap.Modal(document.getElementById('modalNhanKeoAdmin'));
+            modal.show();
+        }
+
+        function confirmAdminAccept() {
+            connection.invoke("AcceptMatch", currentMatchId, currentPosterName, "ADMIN_SYSTEM", "0999999999")
+                .then(() => { alert("Chốt kèo thành công!"); location.reload(); })
+                .catch(err => alert("Lỗi khi chốt kèo: " + err));
+        }
+
+        async function viewTeamStats(teamName) {
+            try {
+                const r = await fetch(`/TimDoiThu/GetTeamStats?teamName=${encodeURIComponent(teamName)}`);
+                const d = await r.json();
+                if (!d.success) { alert(d.message); return; }
+
+                document.getElementById('statTeamName').innerText = d.teamName;
+                document.getElementById('statLogo').src = d.logoUrl || "/images/default-logo.png";
+                document.getElementById('statDescription').innerText = '"' + (d.description || "Giao lưu học hỏi") + '"';
+                document.getElementById('statWins').innerText = d.wins;
+                document.getElementById('statDraws').innerText = d.draws;
+                document.getElementById('statLosses').innerText = d.losses;
+                document.getElementById('statMembers').innerText = d.membersList || "Chưa cập nhật";
+                document.getElementById('statWinRateText').innerText = d.winRate + '%';
+                document.getElementById('statWinRateBar').style.width = d.winRate + '%';
+                document.getElementById('statFairPlay').innerText = d.fairPlayPoint + " / 100";
+
+                var modal = new bootstrap.Modal(document.getElementById('teamStatsModal'));
+                modal.show();
+            } catch (e) { alert("Lỗi tải thông số!"); }
+        }
+    </script>
+}
