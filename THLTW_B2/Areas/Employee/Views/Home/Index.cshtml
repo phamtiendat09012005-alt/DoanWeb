@@ -1,18 +1,142 @@
-﻿@{
-    Layout = null; // Tạm thời chưa dùng khung giao diện
+﻿@model IEnumerable<THLTW_B2.Models.Booking>
+@{
+    Layout = "~/Areas/Employee/Views/Shared/_EmployeeLayout.cshtml";
+    ViewData["Title"] = "Quản lý lịch đặt sân";
+    var currentTab = ViewBag.CurrentTab ?? "donngay";
 }
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Trang Quản Trị - Admin</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
-</head>
-<body class="bg-dark text-white p-5">
-    <h1>CHÀO MỪNG NHÂN VIÊN TRỰC SÂN ĐÃ ĐĂNG NHẬP</h1>
-    <p>Đây là khu vực tuyệt mật chỉ dành cho Employee của hệ thống QLSBMini.</p>
 
-    <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="~/" method="post">
-        <button type="submit" class="btn btn-danger">Đăng xuất</button>
-    </form>
-</body>
-</html>
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="fa-solid fa-calendar-check me-2 text-success"></i>Quản lý lịch đặt</h2>
+            <p class="text-muted">Danh sách khách hàng đặt sân bóng hệ thống Football TT</p>
+        </div>
+        <a href="#" class="btn btn-success btn-lg shadow-sm rounded-3">
+            <i class="fa-solid fa-plus me-2"></i>Tạo lịch đặt mới
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-0 pt-3">
+            <ul class="nav nav-pills nav-fill p-1 bg-light rounded-3">
+                <li class="nav-item">
+                    <a class="nav-link @(currentTab == "donngay" ? "active bg-success" : "text-dark")"
+                       href="@Url.Action("Index", new { tab = "donngay" })">Đơn ngày (Đang chờ)</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(currentTab == "doncodinh" ? "active bg-success" : "text-dark")"
+                       href="@Url.Action("Index", new { tab = "doncodinh" })">Đơn cố định (Tháng)</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(currentTab == "tatca" ? "active bg-success" : "text-dark")"
+                       href="@Url.Action("Index", new { tab = "tatca" })">Tất cả giao dịch</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Sân bóng</th>
+                            <th>Thời gian</th>
+                            <th>Tổng tiền</th>
+                            <th>Tiền cọc</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">Không tìm thấy lịch đặt nào trong hệ thống.</td>
+                            </tr>
+                        }
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold text-primary">#@item.Id</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success-subtle p-2 rounded-circle me-3 text-success">
+                                            <i class="fa-solid fa-user small"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@(item.User?.UserName ?? "Khách lẻ")</div>
+                                            <small class="text-muted">@item.CreatedAt.ToString("HH:mm dd/MM")</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border p-2"><i class="fa-solid fa-futbol me-1 text-success"></i> @item.SoccerField?.Name</span></td>
+                                <td>
+                                    <div class="fw-bold text-dark">@item.TimeSlot</div>
+                                    <small class="text-muted">Ngày: @item.BookingDate.ToString("dd/MM/yyyy")</small>
+                                </td>
+                                <td class="fw-bold">@item.TotalPrice.ToString("N0") đ</td>
+                                <td class="text-success fw-bold">@item.DepositAmount.ToString("N0") đ</td>
+                                <td>
+                                    @{
+                                        string badgeClass = item.Status == "Đã cọc" ? "bg-warning text-dark" :
+                                        item.Status == "Đã hoàn thành" ? "bg-success" : "bg-danger";
+                                    }
+                                    <span class="badge @badgeClass px-3 py-2">@item.Status</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group shadow-sm">
+                                        @if (item.Status != "Đã hoàn thành")
+                                        {
+                                            <form asp-action="DuyetDon" method="post" onsubmit="return confirm('Xác nhận hoàn thành và thu tiền sân?')">
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-success px-3" title="Hoàn thành">
+                                                    <i class="fa-solid fa-check"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        <button class="btn btn-sm btn-outline-secondary px-3" title="Xem chi tiết">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        <form asp-action="HuyDon" method="post" onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?')">
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-3" title="Hủy đơn">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Chỉnh sửa giao diện Web Dashboard */
+    .nav-pills .nav-link {
+        transition: all 0.3s ease;
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .table thead th {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #f1f1f1;
+    }
+
+    .table tbody td {
+        font-size: 14px;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .btn-group .btn:hover {
+        background-color: #f8f9fa;
+    }
+</style>
