@@ -1,0 +1,66 @@
+﻿@model IEnumerable<dynamic>
+
+@{
+    ViewData["Title"] = "Quản Lý Bảng Lương";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-primary"><i class="bi bi-wallet2"></i> Bảng Lương Chưa Thanh Toán</h3>
+
+        <form asp-action="ChotLuong" method="post" onsubmit="return confirm('Hệ thống sẽ chốt lương và tự động ghi nhận một khoản CHI PHÍ vào Báo cáo doanh thu. Bạn có chắc chắn?');">
+            <button type="submit" class="btn btn-success fw-bold shadow-sm">
+                <i class="bi bi-check2-circle"></i> Chốt Lương & Đưa Vào Báo Cáo
+            </button>
+        </form>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success"><i class="bi bi-check-circle"></i> @TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> @TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover table-bordered mb-0 text-center align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>STT</th>
+                        <th class="text-start">Tên Nhân Viên</th>
+                        <th>Số Ca Chưa Nhận Tiền</th>
+                        <th class="text-end pe-4">Tổng Lương Tạm Tính (VNĐ)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="4" class="text-center py-4 text-muted">Tất cả nhân viên đã được thanh toán lương đầy đủ.</td></tr>
+                    }
+                    else
+                    {
+                        int stt = 1;
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@(stt++)</td>
+                                <td class="text-start fw-bold">@item.FullName</td>
+                                <td><span class="badge bg-info text-dark rounded-pill px-3">@item.TotalShifts ca</span></td>
+                                <td class="text-end pe-4 text-danger fw-bold">@item.TotalSalary.ToString("N0")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="3" class="text-end fw-bold fs-5">TỔNG QUỸ LƯƠNG CẦN CHI:</td>
+                        <td class="text-end pe-4 text-danger fw-bold fs-5">@ViewBag.GrandTotal?.ToString("N0") VNĐ</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
