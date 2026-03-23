@@ -1,0 +1,118 @@
+﻿@{
+    Layout = "~/Areas/Employee/Views/Shared/_EmployeeLayout.cshtml";
+    ViewData["Title"] = "Sơ đồ lịch sân";
+}
+
+<style>
+    /* BẢN VÁ LỖI CHỒNG CHÉO GIAO DIỆN */
+    .dashboard-wrapper {
+        margin-left: 260px; /* Nếu vẫn bị lẹm hoặc hở khoảng trắng, bạn tăng/giảm số 260px này cho khớp thanh menu nhé */
+        width: calc(100% - 260px);
+        padding: 20px;
+        min-height: 100vh;
+        background-color: #f4f6f9;
+    }
+
+    /* Thu gọn lại khi xem trên điện thoại/tablet */
+    @@media (max-width: 991.98px) {
+        .dashboard-wrapper {
+            margin-left: 0;
+            width: 100%;
+            padding: 15px;
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <div class="container-fluid px-0">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-dark"><i class="fa-solid fa-calendar-days me-2 text-primary"></i>Sơ đồ lịch sân</h2>
+                <p class="text-muted mb-0">Xem tổng quan lịch đặt sân và kèo giao hữu theo tuần</p>
+            </div>
+            
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <div id="calendar" style="min-height: 650px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                locale: 'vi',
+                slotMinTime: '05:00:00',
+                slotMaxTime: '23:00:00',
+                allDaySlot: false,
+                height: 'auto',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                buttonText: {
+                    today: 'Hôm nay', month: 'Tháng', week: 'Tuần', list: 'Lịch biểu'
+                },
+
+                // GỌI DỮ LIỆU TỪ CONTROLLER
+                events: '/Employee/LichSan/GetCalendarEvents',
+
+                eventContent: function(arg) {
+                    let container = document.createElement('div');
+                    container.style.fontSize = '11px';
+                    container.style.fontWeight = '500';
+                    container.style.padding = '2px';
+                    container.style.color = 'white';
+                    container.innerHTML = `<b>${arg.timeText}</b><br/>${arg.event.title}`;
+                    return { domNodes: [container] };
+                },
+
+                eventClick: function(info) {
+                    let detail = 'Chi tiết: ' + info.event.title;
+                    if (info.event.extendedProps.info) {
+                        detail += '\n' + info.event.extendedProps.info;
+                    }
+                    alert(detail);
+                }
+            });
+            calendar.render();
+        });
+    </script>
+
+    <style>
+        #calendar {
+            background: white;
+            border-radius: 8px;
+        }
+
+        .fc-v-event {
+            background-color: #d9534f !important;
+            border: none !important;
+            border-radius: 4px !important;
+        }
+
+        .fc .fc-timegrid-slot {
+            height: 2.5em !important;
+            border-bottom: 1px solid #f0f0f0 !important;
+        }
+
+        .fc-col-header-cell {
+            background-color: #f8f9fa;
+            padding: 10px 0 !important;
+        }
+
+        .fc-timegrid-axis-cushion {
+            font-size: 13px;
+            color: #666;
+        }
+    </style>
+}
