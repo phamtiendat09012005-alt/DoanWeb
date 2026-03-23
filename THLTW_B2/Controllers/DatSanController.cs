@@ -48,7 +48,9 @@ namespace THLTW_B2.Controllers
             var result = allPitches.Select(p => new {
                 id = p.FieldId,
                 name = p.Name,
-                price = p.PricePerHour * (decimal)1.5,
+                // SẾP TÌM VÀ SỬA DÒNG NÀY: Xóa cái đuôi "* (decimal)1.5" đi nhé
+                price = p.PricePerHour,
+
                 // Khóa sân nếu nằm trong 1 trong 2 danh sách trên
                 isBooked = bookedPitchIds.Contains(p.FieldId) || matchedPitchNames.Contains(p.Name.Trim())
             }).ToList();
@@ -74,7 +76,10 @@ namespace THLTW_B2.Controllers
                 TimeSlot = timeSlot,
                 TotalPrice = price,
                 DepositAmount = price * (decimal)0.3,
+
+                // --- SỬA CHỮ "Đã cọc" THÀNH "Đã hoàn thành" ĐỂ ADMIN NHẬN ĐƯỢC TIỀN ---
                 Status = "Đã cọc",
+
                 Note = note,
                 CreatedAt = DateTime.Now
             };
