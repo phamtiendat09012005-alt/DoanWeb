@@ -1,0 +1,84 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model THLTW_B2.Models.Booking
+@{
+    Layout = "~/Areas/Employee/Views/Shared/_EmployeeLayout.cshtml";
+    ViewData["Title"] = "Tạo lịch đặt mới";
+}
+
+<div class="container mt-4" style="margin-left: 280px; width: calc(100% - 280px);">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-header bg-success text-white rounded-top-4">
+            <h4 class="mb-0"><i class="fa-solid fa-plus-circle me-2"></i>Thêm Lịch Đặt Sân</h4>
+
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Chọn Sân</label>
+                        <select asp-for="SoccerFieldId" class="form-select">
+                            <option value="">-- Chọn sân bóng --</option>
+                            @if (ViewBag.ListSan != null)
+                            {
+                                foreach (var san in ViewBag.ListSan)
+                                {
+                                    <option value="@san.FieldId">@san.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Khách hàng</label>
+                        <select asp-for="UserId" class="form-select">
+                            <option value="">-- Chọn khách hàng --</option>
+                            @if (ViewBag.ListKhach != null)
+                            {
+                                foreach (var khach in ViewBag.ListKhach)
+                                {
+                                    <option value="@khach.Id">@khach.FullName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Ngày đặt</label>
+                        <input asp-for="BookingDate" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Khung giờ</label>
+                        <select asp-for="TimeSlot" class="form-select">
+                            <option value="06:00 - 07:30">06:00 - 07:30</option>
+                            <option value="07:30 - 09:00">07:30 - 09:00</option>
+                            <option value="16:00 - 17:30">16:00 - 17:30</option>
+                            <option value="17:30 - 19:00">17:30 - 19:00</option>
+                            <option value="19:00 - 20:30">19:00 - 20:30</option>
+                            <option value="20:30 - 22:00">20:30 - 22:00</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Tổng tiền</label>
+                        <input asp-for="TotalPrice" type="number" class="form-control" />
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Ghi chú</label>
+                        <textarea asp-for="Note" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Lưu lịch đặt
+                    </button>
+
+                    <a asp-action="YeuCauDatSan" class="btn btn-outline-secondary px-4">
+                        Quay lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
