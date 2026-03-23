@@ -15,7 +15,13 @@ namespace THLTW_B2.DataAccess
         public DbSet<SoccerField> SoccerFields { get; set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Team> Teams { get; set; }
+
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderDetail> OrderDetails { get; set; }
+
         public DbSet<Expense> Expenses { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+
         public DbSet<EmployeeShift> EmployeeShifts { get; set; }
     }
 

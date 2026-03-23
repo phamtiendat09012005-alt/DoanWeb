@@ -62,12 +62,17 @@
                         <label class="form-label fw-semibold">Khung giờ sân <span class="text-danger">*</span></label>
                         <select id="timeSlotInput" class="form-select" onchange="autoLoadPitches()">
                             <option value="">-- Chọn khung giờ --</option>
-                            <option value="06:00 - 07:30">06:00 - 07:30</option>
+                            <option value="06:00 - 07:30">06:00 - 07:30 (Sáng sớm)</option>
                             <option value="07:30 - 09:00">07:30 - 09:00</option>
+                            <option value="09:00 - 10:30">09:00 - 10:30</option>
+                            <option value="10:30 - 12:00">10:30 - 12:00</option>
+
+                            <option value="14:30 - 16:00">14:30 - 16:00</option>
                             <option value="16:00 - 17:30">16:00 - 17:30</option>
-                            <option value="17:30 - 19:00">17:30 - 19:00</option>
-                            <option value="19:00 - 20:30">19:00 - 20:30</option>
-                            <option value="20:30 - 22:00">20:30 - 22:00</option>
+
+                            <option value="17:30 - 19:00">17:30 - 19:00 (Giờ vàng)</option>
+                            <option value="19:00 - 20:30">19:00 - 20:30 (Giờ vàng)</option>
+                            <option value="20:30 - 22:00">20:30 - 22:00 (Giờ vàng)</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -151,27 +156,46 @@
     <script>
         let pitchModalObj, paymentModalObj, pendingBookingData = null;
 
-        // --- KHỞI TẠO LỊCH ---
+        // --- KHỞI TẠO LỊCH VÀ KHÓA NGÀY QUÁ KHỨ ---
         document.addEventListener('DOMContentLoaded', function() {
+            // 1. Khóa ngày hôm qua (Không cho khách gõ ngày trong quá khứ)
+            let dateInputElem = document.getElementById("dateInput");
+            if (dateInputElem) {
+                let today = new Date();
+                let tzoffset = today.getTimezoneOffset() * 60000;
+                let localISOTime = (new Date(today - tzoffset)).toISOString().slice(0, 10);
+                dateInputElem.setAttribute('min', localISOTime);
+            }
+
+            // 2. Render cái Lịch FullCalendar
             var calendarEl = document.getElementById('calendar');
             var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek', // Hiển thị theo tuần dễ nhìn giờ hơn
-                locale: 'vi', // Tiếng Việt
+                initialView: 'timeGridWeek',
+                locale: 'vi',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,listWeek' // Cho phép đổi góc nhìn
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
                 },
-                slotMinTime: '06:00:00', // Bắt đầu từ 6h sáng
-                slotMaxTime: '23:00:00', // Kết thúc lúc 11h đêm
-                events: '/DatSan/GetCalendarEvents', // Gọi API lấy dữ liệu lịch
+                slotMinTime: '06:00:00',
+                slotMaxTime: '23:00:00',
+                events: '/DatSan/GetCalendarEvents',
 
-                // MỘT CHẠM ĐIỀN FORM: Khi bấm vào 1 ô trống trên lịch
                 dateClick: function(info) {
-                    const selectedDate = info.dateStr.split('T')[0]; // Lấy phần ngày (YYYY-MM-DD)
+                    const selectedDate = info.dateStr.split('T')[0];
+
+                    // Nếu ngày click vào là ngày quá khứ thì chặn lại không cho đổi DateInput
+                    let today = new Date();
+                    today.setHours(0,0,0,0);
+                    let clickedDate = new Date(selectedDate);
+
+                    if(clickedDate < today) {
+                        alert("Không thể chọn ngày trong quá khứ sếp ơi!");
+                        return;
+                    }
+
                     document.getElementById('dateInput').value = selectedDate;
 
-                    // Nháy viền xanh báo hiệu cho khách biết đã điền thành công
                     const dateInput = document.getElementById('dateInput');
                     dateInput.style.boxShadow = "0 0 10px #0d6efd";
                     setTimeout(() => dateInput.style.boxShadow = "none", 800);
@@ -186,13 +210,40 @@
         function autoLoadPitches() {
             const time = document.getElementById("timeSlotInput").value;
             const date = document.getElementById("dateInput").value;
-            if (date && time) checkAvailablePitches(); // Tự động load nếu đủ 2 thông tin
+            if (date && time) checkAvailablePitches();
         }
-
+        function tinhSoGioDa(khungGio) {
+            try {
+                let gio = khungGio.split('-');
+                let batDau = gio[0].trim().split(':');
+                let ketThuc = gio[1].trim().split(':');
+                let phutBatDau = parseInt(batDau[0]) * 60 + parseInt(batDau[1]);
+                let phutKetThuc = parseInt(ketThuc[0]) * 60 + parseInt(ketThuc[1]);
+                return (phutKetThuc - phutBatDau) / 60;
+            } catch (e) {
+                return 1.5; // Mặc định 1.5 tiếng
+            }
+        }
         async function checkAvailablePitches() {
             const date = document.getElementById("dateInput").value;
             const time = document.getElementById("timeSlotInput").value;
             if (!date || !time) return alert("Vui lòng chọn Ngày và Khung giờ!");
+
+            // --- KIỂM TRA GIỜ THỰC TẾ (Lô cốt chặn quá khứ) ---
+            let startTimeStr = time.split('-')[0].trim();
+            let [hours, minutes] = startTimeStr.split(':');
+            let selectedDateTime = new Date(date);
+            selectedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            let now = new Date();
+
+            if (selectedDateTime <= now) {
+                document.getElementById("timeSlotInput").value = "";
+                document.getElementById("selectedPitchName").innerText = "Chưa chọn sân";
+                document.getElementById("selectedPitchPriceDisplay").innerText = "0 đ";
+                document.getElementById("hiddenPitchId").value = "";
+                return alert("Ca đá này đã trôi qua rồi sếp ơi! Vui lòng chọn khung giờ khác.");
+            }
+            // ------------------------------------------------
 
             document.getElementById("modalTimeInfo").innerText = `${date} | ${time}`;
             const container = document.getElementById("pitchListContainer");
@@ -202,6 +253,7 @@
             pitchModalObj.show();
 
             try {
+                const soGioDa = tinhSoGioDa(time); // Gọi hàm tính giờ (Ví dụ: 1.5)
                 const response = await fetch(`/DatSan/GetAvailablePitches?date=${date}&timeSlot=${time}`);
                 const pitches = await response.json();
                 container.innerHTML = "";
@@ -211,18 +263,24 @@
                 }
 
                 pitches.forEach(pitch => {
-                    const formattedPrice = pitch.price.toLocaleString('vi-VN');
+                    // TÍNH TỔNG TIỀN = GIÁ 1 GIỜ x SỐ GIỜ ĐÁ
+                    let tongTienSan = pitch.price * soGioDa;
+
                     if (pitch.isBooked) {
                         container.innerHTML += `
                             <button class="list-group-item d-flex justify-content-between mb-2 rounded border bg-light text-muted" disabled style="cursor: not-allowed;">
                                 <span><del class="fw-bold">${pitch.name}</del> <span class="small text-danger ms-1">(Đã hết chỗ)</span></span>
-                                <span class="badge bg-secondary">${formattedPrice} đ</span>
+                                <span class="badge bg-secondary">${tongTienSan.toLocaleString('vi-VN')} đ</span>
                             </button>`;
                     } else {
+                        // Hiển thị rõ ràng cho khách: Giá 1 giờ x Số giờ
                         container.innerHTML += `
-                            <button class="list-group-item d-flex justify-content-between mb-2 rounded border shadow-sm" onclick="selectPitch(${pitch.id}, '${pitch.name}', ${pitch.price})">
-                                <span class="fw-bold text-primary">${pitch.name}</span>
-                                <span class="badge bg-success" style="font-size: 0.9rem;">${formattedPrice} đ</span>
+                            <button class="list-group-item d-flex justify-content-between align-items-center mb-2 rounded border shadow-sm" onclick="selectPitch(${pitch.id}, '${pitch.name}', ${tongTienSan})">
+                                <div class="text-start">
+                                    <span class="fw-bold text-primary">${pitch.name}</span><br>
+                                    <small class="text-muted">${pitch.price.toLocaleString('vi-VN')}đ/h x ${soGioDa} giờ</small>
+                                </div>
+                                <span class="badge bg-success" style="font-size: 0.9rem;">Tổng: ${tongTienSan.toLocaleString('vi-VN')} đ</span>
                             </button>`;
                     }
                 });
@@ -231,11 +289,11 @@
             }
         }
 
-        function selectPitch(id, name, price) {
+        function selectPitch(id, name, tongTien) {
             document.getElementById("selectedPitchName").innerText = "Đã chọn: " + name;
-            document.getElementById("selectedPitchPriceDisplay").innerText = price.toLocaleString('vi-VN') + " đ";
+            document.getElementById("selectedPitchPriceDisplay").innerText = tongTien.toLocaleString('vi-VN') + " đ";
             document.getElementById("hiddenPitchId").value = id;
-            document.getElementById("hiddenPitchPrice").value = price;
+            document.getElementById("hiddenPitchPrice").value = tongTien;
             pitchModalObj.hide();
         }
 
@@ -246,15 +304,23 @@
             const time = document.getElementById("timeSlotInput").value;
             const phone = document.getElementById("phoneInput").value;
             const pitchId = document.getElementById("hiddenPitchId").value;
-            const price = document.getElementById("hiddenPitchPrice").value;
+            const tongTien = document.getElementById("hiddenPitchPrice").value; // Lấy tổng tiền
 
             if (!name || !date || !time || !phone || !pitchId) return alert("Vui lòng điền đủ thông tin và chọn sân!");
 
-            pendingBookingData = { pitchId, date, time, price, note: document.getElementById("noteInput").value, phone };
+            pendingBookingData = { pitchId, date, time, price: tongTien, note: document.getElementById("noteInput").value, phone };
 
-            const deposit = parseInt(price) * 0.3;
-            document.getElementById("depositAmount").innerText = deposit.toLocaleString('vi-VN') + " đ";
-            document.getElementById("paymentContent").innerText = "DS " + phone + " " + date.replace(/-/g, '').slice(-4);
+            // CHỖ NÀY QUAN TRỌNG NÈ SẾP: Tính 30% của Tổng tiền làm Tiền Cọc
+            const tienCoc = Math.round(parseInt(tongTien) * 0.3);
+            document.getElementById("depositAmount").innerText = tienCoc.toLocaleString('vi-VN') + " đ";
+
+            // Tạo mã đơn hàng độc nhất
+            const paymentContent = "DS" + phone.slice(-4) + date.replace(/-/g, '').slice(-4);
+            document.getElementById("paymentContent").innerText = paymentContent;
+
+            // BƠM TIỀN CỌC VÀO MÃ QR (Đổi link ảnh QR)
+            const qrImg = document.querySelector("#paymentModal img");
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${paymentContent}_${tienCoc}`;
 
             paymentModalObj = new bootstrap.Modal(document.getElementById('paymentModal'));
             paymentModalObj.show();
