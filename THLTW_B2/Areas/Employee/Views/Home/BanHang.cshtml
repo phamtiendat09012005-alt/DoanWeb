@@ -5,7 +5,6 @@
 }
 
 <style>
-    /* ... Giữ nguyên phần Style của bạn ... */
     .dashboard-wrapper {
         margin-left: 260px;
         width: calc(100% - 260px);
@@ -84,7 +83,6 @@
                         {
                             foreach (var cat in ViewBag.Categories)
                             {
-                                @* Chú ý: Dùng đúng tên cột CategoryId hoặc Id của bạn *@
                                 <button class="btn btn-outline-success bg-white filter-btn" onclick="locSanPham('@cat.CategoryId', this)">@cat.Name</button>
                             }
                         }
@@ -96,7 +94,6 @@
                     {
                         foreach (var item in Model)
                         {
-                            @* BỔ SUNG: Thêm class 'product-item' và 'data-category' vào đây *@
                             <div class="col-6 col-md-4 col-xl-3 product-item" data-category="@item.CategoryId">
                                 <div class="card h-100 border-0 shadow-sm pos-product-card rounded-3"
                                      onclick="addToCart(@item.ProductId, '@item.Name', @((long)item.Price), @item.StockQuantity)">
@@ -125,7 +122,6 @@
                 </div>
             </div>
 
-            @* ... Giữ nguyên phần Hóa đơn (Bill Area) của bạn ... *@
             <div class="col-lg-4">
                 <div class="bill-area p-3">
                     <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-file-invoice-dollar me-2 text-primary"></i>Hóa đơn hiện tại</h5>
@@ -139,7 +135,6 @@
                     </div>
 
                     <div class="bill-items mb-3">
-                        @* Render động ở JS *@
                     </div>
 
                     <div class="border-top pt-3 mt-auto">
@@ -151,7 +146,8 @@
                             <h4 class="fw-bold mb-0 text-dark">Tổng tiền:</h4>
                             <h3 class="fw-bold text-success mb-0" id="total-price">0 đ</h3>
                         </div>
-                        <button class="btn btn-success btn-lg w-100 fw-bold shadow-sm" onclick="thanhToan()">
+
+                        <button class="btn btn-success btn-lg w-100 fw-bold shadow-sm" onclick="hienThiQRPOS()">
                             <i class="fa-solid fa-money-bill-wave me-2"></i> THANH TOÁN
                         </button>
                     </div>
@@ -162,10 +158,37 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalQR_POS" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-qrcode me-2"></i>Thanh toán hóa đơn</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="mb-2">Khách hàng vui lòng quét mã để thanh toán:</p>
+                <h3 class="text-danger fw-bold mb-3" id="modalPosTotalAmount">0 đ</h3>
+
+                <div class="bg-light p-3 rounded mb-3 border">
+                    <img id="qrPosImage" src="" alt="QR" class="img-fluid shadow-sm mb-2" style="max-width: 200px;">
+                    <p class="small text-muted mb-0">Nội dung CK: <strong id="modalPosContent"></strong></p>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-secondary px-4 me-2" data-bs-dismiss="modal">Hủy / Sửa đơn</button>
+
+                <button type="button" class="btn btn-success px-4 fw-bold" onclick="thucHienThanhToanPOS()">
+                    <i class="fa-solid fa-check-circle me-1"></i>Đã nhận đủ tiền
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
-        // ... Các hàm addToCart, changeQuantity, renderCart, thanhToan giữ nguyên như bạn đã cập nhật ...
         let cart = [];
+        let grandTotalAmount = 0; // Biến lưu tổng tiền để nhét vào mã QR
 
         function addToCart(id, name, price, maxStock) {
             if (maxStock <= 0) {
@@ -201,7 +224,6 @@
             }
         }
 
-        // HÀM LỌC ĐÃ ĐƯỢC TỐI ƯU
         function locSanPham(catId, btnElement) {
             let allBtns = document.querySelectorAll('.filter-btn');
             allBtns.forEach(btn => {
@@ -212,7 +234,6 @@
             let products = document.querySelectorAll('.product-item');
             products.forEach(p => {
                 let pCatId = p.getAttribute('data-category');
-                // So sánh chuỗi hoặc ID
                 if (catId === 'Tất cả' || pCatId === catId.toString()) {
                     p.style.display = 'block';
                 } else {
@@ -255,13 +276,46 @@
                         </div>`;
                 });
             }
+
             totalQuantityEl.innerText = totalQty;
             totalPriceEl.innerText = totalPrice.toLocaleString('vi-VN') + ' đ';
+
+            // Cập nhật biến tổng tiền để dùng cho hàm QR bên dưới
+            grandTotalAmount = totalPrice;
         }
 
-        function thanhToan() {
-            if (cart.length === 0) { alert("Giỏ hàng đang trống!"); return; }
-            if (!confirm("Xác nhận thanh toán?")) return;
+        // ==========================================
+        // HÀM HIỆN MÃ QR TRƯỚC KHI GỬI VỀ SERVER
+        // ==========================================
+        function hienThiQRPOS() {
+            if (cart.length === 0) {
+                alert("Giỏ hàng đang trống! Vui lòng chọn món trước.");
+                return;
+            }
+
+            // Gắn số tiền lên Modal QR
+            document.getElementById("modalPosTotalAmount").innerText = grandTotalAmount.toLocaleString('vi-VN') + " đ";
+
+            // Tạo chuỗi mã hóa chuyển khoản (Random để không bị trùng)
+            let randomCode = Math.floor(1000 + Math.random() * 9000);
+            let noiDungCK = "POS" + randomCode;
+            document.getElementById("modalPosContent").innerText = noiDungCK;
+
+            // Render ảnh QR ép đúng số tiền cần thanh toán
+            document.getElementById("qrPosImage").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${noiDungCK}_${grandTotalAmount}`;
+
+            // Bật popup lên
+            let posModal = new bootstrap.Modal(document.getElementById('modalQR_POS'));
+            posModal.show();
+        }
+
+        // ==========================================
+        // HÀM GỌI API ĐỂ TRỪ KHO VÀ CỘNG TIỀN VÀO ADMIN
+        // ==========================================
+        function thucHienThanhToanPOS() {
+            // Thay đổi nút thành "Đang xử lý..." để nhân viên không ấn 2 lần
+            event.target.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Đang lưu...';
+            event.target.disabled = true;
 
             fetch('/Employee/Home/XuLyThanhToanPOS', {
                 method: 'POST',
@@ -271,13 +325,20 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert("✅ Thanh toán thành công!");
-                    window.location.reload();
+                    alert("✅ Thanh toán thành công! Hệ thống đã trừ kho và cộng tiền vào Doanh thu.");
+                    window.location.reload(); // Load lại trang để làm mới giao diện và tồn kho
                 } else {
                     alert("❌ Lỗi: " + data.message);
+                    // Phục hồi lại nút nếu bị lỗi
+                    event.target.innerHTML = '<i class="fa-solid fa-check-circle me-1"></i>Đã nhận đủ tiền';
+                    event.target.disabled = false;
                 }
             })
-            .catch(error => { alert("❌ Lỗi kết nối!"); });
+            .catch(error => {
+                alert("❌ Lỗi kết nối mạng hoặc lỗi server!");
+                event.target.innerHTML = '<i class="fa-solid fa-check-circle me-1"></i>Đã nhận đủ tiền';
+                event.target.disabled = false;
+            });
         }
     </script>
 }

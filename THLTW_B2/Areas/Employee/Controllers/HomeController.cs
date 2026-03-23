@@ -28,30 +28,22 @@ namespace THLTW_B2.Areas.Employee.Controllers
         }
 
         // ==========================================
-        // 1. QUẢN LÝ ĐẶT SÂN
+        // 1. QUẢN LÝ ĐẶT SÂN (LÚC CHẠY HOÀN HẢO NHẤT)
         // ==========================================
-
 
         public async Task<IActionResult> YeuCauDatSan(string tab = "donngay")
         {
             ViewBag.CurrentTab = tab;
 
-            // 1. NẾU NHÂN VIÊN BẤM VÀO TAB "TÌM ĐỐI THỦ"
             if (tab == "timdoithu")
             {
-                // Lấy dữ liệu từ bảng MatchRequests
                 var matchRequests = await _context.MatchRequests
-        .OrderByDescending(m => m.CreatedAt)
-        .ToListAsync();
-
-                // Gắn vào ViewBag để gửi sang giao diện
+                    .OrderByDescending(m => m.CreatedAt)
+                    .ToListAsync();
                 ViewBag.MatchRequests = matchRequests;
-
-                // Trả về danh sách Booking rỗng để model @model không bị lỗi
                 return View(new List<Booking>());
             }
 
-            // 2. NẾU LÀ CÁC TAB ĐẶT SÂN BÌNH THƯỜNG (Giữ nguyên code cũ của bạn)
             var query = _context.Bookings
                 .Include(b => b.User)
                 .Include(b => b.SoccerField)
@@ -92,21 +84,9 @@ namespace THLTW_B2.Areas.Employee.Controllers
             if (booking != null && booking.Status != "Đã hoàn thành")
             {
                 booking.Status = "Đã hoàn thành";
-
-                var newPayment = new Payment
-                {
-                    InvoiceCode = "HD-" + DateTime.Now.ToString("yyyyMMdd") + "-" + new Random().Next(1000, 9999),
-                    BookingId = booking.Id,
-                    Amount = booking.TotalPrice,
-                    PaymentMethod = "Tiền mặt",
-                    Status = "Thành công",
-                    PaymentDate = DateTime.Now,
-                    Note = "Thu tiền sân " + booking.TimeSlot
-                };
-
-                _context.Payments.Add(newPayment);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "Đơn đã HOÀN THÀNH. Hệ thống đã cộng tiền vào Doanh thu!";
+
+                TempData["Success"] = "Đơn đã HOÀN THÀNH.";
             }
             return RedirectToAction(nameof(YeuCauDatSan));
         }
@@ -132,74 +112,118 @@ namespace THLTW_B2.Areas.Employee.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            // ĐỔI TÊN THÀNH UserList và SoccerFieldList
             ViewBag.ListSan = _context.SoccerFields.ToList();
             ViewBag.ListKhach = _context.Users.ToList();
-
             return View(new Booking());
-
-
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Booking booking)
         {
-            booking.Status = "Đã xác nhận"; // Nhân viên tự đặt thì mặc định là đã chốt
+            booking.Status = "Đã cọc";
+            booking.DepositAmount = booking.TotalPrice * (decimal)0.3; // Tự tính cọc 30%
             booking.CreatedAt = DateTime.Now;
+
             ModelState.Remove("SoccerField");
             ModelState.Remove("User");
 
-            // 2. Kiểm tra xem dữ liệu hợp lệ không
+            if (booking.UserId == "GUEST")
+            {
+                var guestUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "khachtudo");
+                if (guestUser == null)
+                {
+                    guestUser = new ApplicationUser
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        UserName = "khachtudo",
+                        Email = "khachtudo@hethong.com",
+                        FullName = "Khách Tự Do (Tại Quầy)",
+                        PhoneNumber = "0000000000",
+                        EmailConfirmed = true
+                    };
+                    _context.Users.Add(guestUser);
+                    await _context.SaveChangesAsync();
+                }
+                booking.UserId = guestUser.Id;
+            }
+
             if (ModelState.IsValid)
             {
+                bool isBooked = await _context.Bookings.AnyAsync(b =>
+                    b.SoccerFieldId == booking.SoccerFieldId &&
+                    b.BookingDate.Date == booking.BookingDate.Date &&
+                    b.TimeSlot == booking.TimeSlot &&
+                    b.Status != "Đã hủy");
+
+                if (isBooked)
+                {
+                    ModelState.AddModelError("", "LỖI: Sân này ở khung giờ này đã có người đặt trên mạng rồi!");
+                    ViewBag.ListSan = _context.SoccerFields.ToList();
+                    ViewBag.ListKhach = _context.Users.ToList();
+                    return View(booking);
+                }
+
+                var pitch = await _context.SoccerFields.FindAsync(booking.SoccerFieldId);
+                var chotKeo = await _context.MatchRequests.AnyAsync(m =>
+                    m.PitchName == pitch.Name &&
+                    m.MatchDate.Date == booking.BookingDate.Date &&
+                    m.TimeSlot == booking.TimeSlot &&
+                    m.Status != "Đang chờ đối thủ" && m.Status != "Hết hạn (Chờ hoàn cọc)");
+
+                if (chotKeo)
+                {
+                    ModelState.AddModelError("", "LỖI: Sân này đã có đội cáp kèo chốt đá rồi!");
+                    ViewBag.ListSan = _context.SoccerFields.ToList();
+                    ViewBag.ListKhach = _context.Users.ToList();
+                    return View(booking);
+                }
+
+                var pendingMatches = await _context.MatchRequests.Where(m =>
+                    m.MatchDate.Date == booking.BookingDate.Date &&
+                    m.TimeSlot == booking.TimeSlot &&
+                    m.OpponentName == null &&
+                    m.PitchName == pitch.Name).ToListAsync();
+
+                foreach (var match in pendingMatches)
+                {
+                    match.Status = "Đã hủy (Chờ hoàn cọc)";
+                    match.Note = $"Hệ thống tự hủy lúc {DateTime.Now.ToString("HH:mm")}: Nhân viên quán đã chốt cho khách lẻ.";
+                }
+
                 try
                 {
-                    // Lưu vào Database
                     _context.Bookings.Add(booking);
                     await _context.SaveChangesAsync();
 
-                    // Hiện thông báo màu xanh báo thành công
-                    TempData["Success"] = "Đã tạo lịch đặt sân mới thành công!";
-
-                    // Lưu xong thì quay lại trang danh sách (YeuCauDatSan)
+                    TempData["Success"] = "Đã chốt sân cho khách!";
                     return RedirectToAction(nameof(YeuCauDatSan));
                 }
                 catch (Exception ex)
                 {
-                    // Báo lỗi nếu Database trục trặc
-                    ModelState.AddModelError("", "Lỗi khi lưu dữ liệu: " + ex.Message);
+                    string chiTietLoi = ex.Message;
+                    if (ex.InnerException != null) chiTietLoi += " | LỖI: " + ex.InnerException.Message;
+                    ModelState.AddModelError("", "Lỗi khi lưu DB: " + chiTietLoi);
                 }
             }
 
-            // 3. NẾU FORM BỊ LỖI (Ví dụ: chưa nhập tiền), BẮT BUỘC PHẢI NẠP LẠI DỮ LIỆU CHO DROPDOWN
-            // Nếu không có 2 dòng này, lúc form báo lỗi Dropdown sẽ lại trống trơn
             ViewBag.ListSan = _context.SoccerFields.ToList();
             ViewBag.ListKhach = _context.Users.ToList();
-
             return View(booking);
         }
 
         // ==========================================
-        // 3. CHỨC NĂNG BÁN HÀNG DỊCH VỤ TẠI QUẦY (POS)
+        // 3. CHỨC NĂNG BÁN HÀNG DỊCH VỤ TẠI QUẦY (TRẢ VỀ NGUYÊN BẢN CHỈ TRỪ KHO)
         // ==========================================
 
         [HttpGet]
         public async Task<IActionResult> BanHang()
         {
-            // 1. Lấy danh mục để làm thanh lọc (Sửa 'Categories' thành tên bảng của bạn nếu khác)
             ViewBag.Categories = await _context.Categories.ToListAsync();
-
-            // 2. Lấy danh sách sản phẩm
             var products = await _context.Products.ToListAsync();
             return View(products);
         }
 
-        // ==========================================
-        // 4. API CHO GIAO DIỆN BÁN HÀNG BẰNG JAVASCRIPT
-        // ==========================================
-
-        // Class hứng dữ liệu
         public class CartItem
         {
             public int Id { get; set; }
@@ -211,57 +235,63 @@ namespace THLTW_B2.Areas.Employee.Controllers
         [HttpPost]
         public async Task<IActionResult> XuLyThanhToanPOS([FromBody] List<CartItem> cart)
         {
-            if (cart == null || cart.Count == 0)
-            {
-                return Json(new { success = false, message = "Giỏ hàng rỗng!" });
-            }
+            if (cart == null || cart.Count == 0) return Json(new { success = false, message = "Giỏ hàng rỗng!" });
 
-            // Bắt đầu một Transaction để đảm bảo: Nếu lỗi ở đâu thì hủy toàn bộ, không bị trừ tiền oan
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 decimal totalAmount = 0;
                 var chiTietMua = new List<string>();
 
-                // 1. Duyệt qua từng món hàng để kiểm tra và trừ tồn kho
+                // 1. VÒNG LẶP TRỪ TỒN KHO
                 foreach (var item in cart)
                 {
-                    // Lấy sản phẩm từ DB ra (Dùng khóa chính là Id hoặc ProductId tùy model của bạn)
                     var product = await _context.Products.FindAsync(item.Id);
+                    if (product == null) return Json(new { success = false, message = "Lỗi sản phẩm." });
+                    if (product.StockQuantity < item.Quantity) return Json(new { success = false, message = "Không đủ tồn kho." });
 
-                    if (product == null)
-                    {
-                        return Json(new { success = false, message = $"Lỗi: Không tìm thấy sản phẩm '{item.Name}'." });
-                    }
-
-                    // Chốt chặn Backend: Kẻ gian dùng code bypass JavaScript cũng không mua quá số lượng được
-                    if (product.StockQuantity < item.Quantity)
-                    {
-                        return Json(new { success = false, message = $"Sản phẩm '{item.Name}' chỉ còn {product.StockQuantity} cái trong kho." });
-                    }
-
-                    // TRỪ TỒN KHO
-                    product.StockQuantity -= item.Quantity;
-
-                    // Tính tiền và ghi chú
-                    totalAmount += item.Price * item.Quantity;
+                    product.StockQuantity -= item.Quantity; // Trừ kho
+                    totalAmount += item.Price * item.Quantity; // Cộng dồn tiền
                     chiTietMua.Add($"{item.Quantity}x {item.Name}");
                 }
 
-                // 2. Tạo hóa đơn thanh toán
-                var newPayment = new Payment
+                // =========================================================
+                // 2. TUYỆT CHIÊU: TẠO "ĐƠN ĐẶT SÂN ẢO" ĐỂ ADMIN CỘNG TIỀN NƯỚC
+                // =========================================================
+
+                // Lấy đại ID của Sân bóng đầu tiên trong hệ thống để SQL không chửi lỗi "Thiếu Sân"
+                var defaultField = await _context.SoccerFields.FirstOrDefaultAsync();
+                int fieldId = defaultField != null ? defaultField.FieldId : 0;
+
+                if (fieldId > 0)
                 {
-                    InvoiceCode = "POS-" + DateTime.Now.ToString("yyyyMMddHHmmss"),
-                    Amount = totalAmount,
-                    PaymentMethod = "Tiền mặt",
-                    Status = "Thành công",
-                    PaymentDate = DateTime.Now,
-                    Note = "Bán lẻ: " + string.Join(", ", chiTietMua)
-                };
+                    // Lấy hoặc tạo tài khoản "Khách Tự Do"
+                    var guestUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "khachtudo");
+                    if (guestUser == null)
+                    {
+                        guestUser = new ApplicationUser { Id = Guid.NewGuid().ToString(), UserName = "khachtudo", Email = "khachtudo@hethong.com", FullName = "Khách Tự Do (Tại Quầy)", PhoneNumber = "0000000000", EmailConfirmed = true };
+                        _context.Users.Add(guestUser);
+                        await _context.SaveChangesAsync();
+                    }
 
-                _context.Payments.Add(newPayment);
+                    // Nhét tiền bán nước vào vỏ bọc "Đơn đặt sân"
+                    var fakeBooking = new Booking
+                    {
+                        UserId = guestUser.Id,
+                        SoccerFieldId = fieldId,
+                        BookingDate = DateTime.Now.Date,
+                        TimeSlot = "POS " + DateTime.Now.ToString("HH:mm"), // Ghi nhận đây là đơn POS thay vì giờ đá
+                        TotalPrice = totalAmount,
+                        DepositAmount = totalAmount, // Nộp đủ 100% tiền nước
+                        Status = "Đã hoàn thành", // Khớp mật khẩu để Admin hút tiền lên Báo cáo
+                        CreatedAt = DateTime.Now,
+                        Note = "Bán lẻ tại quầy: " + string.Join(", ", chiTietMua)
+                    };
 
-                // 3. Lưu toàn bộ thay đổi (Trừ kho + Thêm hóa đơn)
+                    _context.Bookings.Add(fakeBooking);
+                }
+
+                // 3. LƯU TẤT CẢ VÀO DATABASE
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -269,8 +299,8 @@ namespace THLTW_B2.Areas.Employee.Controllers
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(); // Có lỗi xảy ra thì hoàn tác lại kho
-                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+                await transaction.RollbackAsync();
+                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.InnerException?.Message ?? ex.Message });
             }
         }
     }

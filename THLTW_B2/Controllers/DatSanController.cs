@@ -112,7 +112,8 @@ namespace THLTW_B2.Controllers
             var events = new List<object>();
 
             // 1. Lấy dữ liệu Đặt Sân (Bao trọn)
-            var bookings = _context.Bookings.Where(b => b.Status != "Đã hủy").ToList();
+            // Thêm cái && b.TimeSlot.Contains("-") vào để nó bỏ qua mấy đơn bán nước ảo
+            var bookings = _context.Bookings.Where(b => b.Status != "Đã hủy" && b.TimeSlot.Contains("-")).ToList();
             foreach (var b in bookings)
             {
                 var pitch = _context.SoccerFields.Find(b.SoccerFieldId);

@@ -130,19 +130,15 @@
                                             <span class="fw-bold">@item.MatchDate.ToString("dd/MM/yyyy")</span><br />
                                             <small class="text-muted">@item.TimeSlot</small>
                                         </td>
-
                                         <td class="fw-bold text-success">@item.PitchName</td>
-
                                         <td>
                                             @item.TeamName <br />
                                             <small class="text-muted">@item.Phone</small>
                                         </td>
-
                                         <td>
                                             @if (!string.IsNullOrEmpty(item.OpponentTeamName))
                                             {
                                                 <span class="fw-bold">@item.OpponentTeamName</span>
-                                
                                                 <br />
                                                 <small class="text-muted">@item.OpponentPhone</small>
                                             }
@@ -151,7 +147,6 @@
                                                 <span class="badge bg-secondary opacity-50">Đang chờ...</span>
                                             }
                                         </td>
-
                                         <td>
                                             @if (item.Status != "Đang chờ đối thủ")
                                             {
@@ -177,7 +172,7 @@
                         </tbody>
                     </table>
                 }
-                
+
                 @* ======================================================= *@
                 @* KHU VỰC 2: CÁC TAB CÒN LẠI THÌ HIỆN BẢNG ĐẶT SÂN CŨ *@
                 @* ======================================================= *@
@@ -207,7 +202,6 @@
                             }
                             @foreach (var item in Model)
                             {
-                                // ... (Giữ nguyên toàn bộ khối code <tr> ... </tr> cũ của bạn ở đây) ...
                                 <tr>
                                     <td class="ps-3 fw-bold text-primary">#@item.Id</td>
                                     <td>
@@ -244,9 +238,10 @@
                                             }
                                             else if (item.Status != "Đã hoàn thành" && item.Status != "Đã hủy")
                                             {
-                                                <form asp-action="DuyetDon" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                    <button type="submit" class="btn btn-sm btn-outline-success mx-1" title="Hoàn thành"><i class="fa-solid fa-cash-register"></i></button>
-                                                </form>
+                                                <button type="button" class="btn btn-sm btn-outline-success mx-1" title="Hoàn thành & Thu 70%"
+                                                        onclick="hienThiQRThu70PhanTram(@item.Id, @item.TotalPrice, @item.DepositAmount, '@item.BookingDate.ToString("yyyyMMdd")')">
+                                                    <i class="fa-solid fa-cash-register"></i>
+                                                </button>
                                             }
                                             <form asp-action="HuyDon" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Hủy lịch đặt này?')">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger mx-1" title="Hủy"><i class="fa-solid fa-xmark"></i></button>
@@ -262,3 +257,65 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalThu70" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-qrcode me-2"></i>Thu Tiền Sân Còn Lại (70%)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="mb-2">Khách hàng quét mã để thanh toán phần tiền còn lại:</p>
+
+                <h3 class="text-danger fw-bold mb-3" id="soTienConLai">0 đ</h3>
+
+                <div class="bg-light p-3 rounded mb-3 border">
+                    <img id="qrImage70" src="" alt="QR" class="img-fluid shadow-sm mb-2" style="max-width: 200px;">
+                    <p class="small text-muted mb-0">Nội dung CK: <strong id="modalPaymentContent70"></strong></p>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-secondary px-4 me-2" data-bs-dismiss="modal">Đóng</button>
+
+                <form asp-action="DuyetDon" method="post" id="formDuyetDon70">
+                    <input type="hidden" name="id" id="hiddenDuyetDonId" value="" />
+                    <button type="submit" class="btn btn-success px-4 fw-bold">
+                        <i class="fa-solid fa-check-circle me-1"></i>Đã nhận đủ 70%
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function hienThiQRThu70PhanTram(bookingId, tongTien, tienCoc, ngayDat) {
+            // 1. Tính số tiền 70% còn lại (Tổng - Cọc)
+            let tienConLai = tongTien - tienCoc;
+
+            // Nếu vì lý do gì đó mà tiền còn lại <= 0 thì coi như đã trả đủ, submit luôn
+            if(tienConLai <= 0) {
+                document.getElementById('hiddenDuyetDonId').value = bookingId;
+                document.getElementById('formDuyetDon70').submit();
+                return;
+            }
+
+            // 2. Điền dữ liệu vào Popup
+            document.getElementById('soTienConLai').innerText = tienConLai.toLocaleString('vi-VN') + " đ";
+            document.getElementById('hiddenDuyetDonId').value = bookingId; // Nhét ID vào form ngầm
+
+            // 3. Tạo nội dung chuyển khoản và mã QR
+            let noiDungCK = "ThuNotsan_" + ngayDat;
+            document.getElementById('modalPaymentContent70').innerText = noiDungCK;
+
+            // Ép mã QR hiển thị đúng số tiền 70%
+            document.getElementById('qrImage70').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${noiDungCK}_${tienConLai}`;
+
+            // 4. Bật Popup lên
+            let myModal = new bootstrap.Modal(document.getElementById('modalThu70'));
+            myModal.show();
+        }
+    </script>
+}
