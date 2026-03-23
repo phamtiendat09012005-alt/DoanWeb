@@ -5,7 +5,7 @@
 }
 
 <style>
-    /* BẢN VÁ LỖI GIAO DIỆN CHỒNG CHÉO */
+    /* ... Giữ nguyên phần Style của bạn ... */
     .dashboard-wrapper {
         margin-left: 260px;
         width: calc(100% - 260px);
@@ -15,14 +15,11 @@
     }
 
     @@media (max-width: 991.98px) {
-        .dashboard-wrapper
-
-    {
-        margin-left: 0;
-        width: 100%;
-        padding: 15px;
-    }
-
+        .dashboard-wrapper {
+            margin-left: 0;
+            width: 100%;
+            padding: 15px;
+        }
     }
 
     .container-fluid {
@@ -31,7 +28,6 @@
         padding: 0;
     }
 
-    /* UI Tùy chỉnh cho POS */
     .pos-product-card {
         cursor: pointer;
         transition: transform 0.1s ease, box-shadow 0.1s ease;
@@ -81,11 +77,17 @@
             <div class="col-lg-8">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="fw-bold text-dark mb-0"><i class="fa-solid fa-store me-2 text-success"></i>Bán hàng & Dịch vụ</h4>
+
                     <div class="btn-group shadow-sm" id="category-filters">
                         <button class="btn btn-success fw-bold filter-btn" onclick="locSanPham('Tất cả', this)">Tất cả</button>
-                        <button class="btn btn-outline-success bg-white filter-btn" onclick="locSanPham('1', this)">Nước uống</button>
-                        <button class="btn btn-outline-success bg-white filter-btn" onclick="locSanPham('2', this)">Đồ ăn</button>
-                        <button class="btn btn-outline-success bg-white filter-btn" onclick="locSanPham('3', this)">Thuê đồ</button>
+                        @if (ViewBag.Categories != null)
+                        {
+                            foreach (var cat in ViewBag.Categories)
+                            {
+                                @* Chú ý: Dùng đúng tên cột CategoryId hoặc Id của bạn *@
+                                <button class="btn btn-outline-success bg-white filter-btn" onclick="locSanPham('@cat.CategoryId', this)">@cat.Name</button>
+                            }
+                        }
                     </div>
                 </div>
 
@@ -94,12 +96,14 @@
                     {
                         foreach (var item in Model)
                         {
-                            <div class="col-6 col-md-4 col-xl-3">
+                            @* BỔ SUNG: Thêm class 'product-item' và 'data-category' vào đây *@
+                            <div class="col-6 col-md-4 col-xl-3 product-item" data-category="@item.CategoryId">
                                 <div class="card h-100 border-0 shadow-sm pos-product-card rounded-3"
-                                     onclick="addToCart(@item.ProductId, '@item.Name', @item.Price)">
+                                     onclick="addToCart(@item.ProductId, '@item.Name', @((long)item.Price), @item.StockQuantity)">
 
-                                    <div class="product-icon-wrap bg-success bg-opacity-10 text-success">
+                                    <div class="product-icon-wrap bg-success bg-opacity-10 text-success position-relative">
                                         <i class="fa-solid fa-box-open"></i>
+                                        <span class="position-absolute top-0 end-0 badge bg-danger m-2">Tồn: @item.StockQuantity</span>
                                     </div>
 
                                     <div class="card-body text-center p-2">
@@ -121,6 +125,7 @@
                 </div>
             </div>
 
+            @* ... Giữ nguyên phần Hóa đơn (Bill Area) của bạn ... *@
             <div class="col-lg-4">
                 <div class="bill-area p-3">
                     <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-file-invoice-dollar me-2 text-primary"></i>Hóa đơn hiện tại</h5>
@@ -134,11 +139,7 @@
                     </div>
 
                     <div class="bill-items mb-3">
-                        <div class="text-center text-muted mt-5 pt-5">
-                            <i class="fa-solid fa-cart-arrow-down fa-3x mb-3 opacity-25"></i>
-                            <p class="mb-1 fw-bold">Chưa có sản phẩm.</p>
-                            <p class="small">Click vào món bên trái để thêm</p>
-                        </div>
+                        @* Render động ở JS *@
                     </div>
 
                     <div class="border-top pt-3 mt-auto">
@@ -161,17 +162,25 @@
     </div>
 </div>
 
-
 @section Scripts {
     <script>
+        // ... Các hàm addToCart, changeQuantity, renderCart, thanhToan giữ nguyên như bạn đã cập nhật ...
         let cart = [];
 
-        function addToCart(id, name, price) {
+        function addToCart(id, name, price, maxStock) {
+            if (maxStock <= 0) {
+                alert("❌ Sản phẩm này đã HẾT HÀNG!");
+                return;
+            }
             let existingItem = cart.find(item => item.id === id);
             if (existingItem) {
+                if (existingItem.quantity + 1 > maxStock) {
+                    alert(`⚠️ Trong kho chỉ còn đúng ${maxStock} sản phẩm này!`);
+                    return;
+                }
                 existingItem.quantity += 1;
             } else {
-                cart.push({ id: id, name: name, price: price, quantity: 1 });
+                cart.push({ id: id, name: name, price: price, quantity: 1, maxStock: maxStock });
             }
             renderCart();
         }
@@ -179,29 +188,32 @@
         function changeQuantity(id, delta) {
             let item = cart.find(item => item.id === id);
             if (item) {
-                item.quantity += delta;
+                let newQuantity = item.quantity + delta;
+                if (newQuantity > item.maxStock) {
+                    alert(`⚠️ Trong kho chỉ còn tối đa ${item.maxStock} sản phẩm này!`);
+                    return;
+                }
+                item.quantity = newQuantity;
                 if (item.quantity <= 0) {
                     cart = cart.filter(i => i.id !== id);
                 }
                 renderCart();
             }
         }
-        // 5. Hàm lọc sản phẩm theo Danh mục
-        function locSanPham(tenDanhMuc, btnElement) {
-            // Đổi màu giao diện nút bấm
+
+        // HÀM LỌC ĐÃ ĐƯỢC TỐI ƯU
+        function locSanPham(catId, btnElement) {
             let allBtns = document.querySelectorAll('.filter-btn');
             allBtns.forEach(btn => {
-                btn.className = 'btn btn-outline-success bg-white filter-btn'; // Chuyển tất cả về viền xanh, nền trắng
+                btn.className = 'btn btn-outline-success bg-white filter-btn';
             });
-            btnElement.className = 'btn btn-success fw-bold filter-btn'; // Đổi nút vừa bấm thành nền xanh lá đặc
+            btnElement.className = 'btn btn-success fw-bold filter-btn';
 
-            // Xử lý ẩn/hiện sản phẩm
             let products = document.querySelectorAll('.product-item');
             products.forEach(p => {
-                let category = p.getAttribute('data-category');
-
-                // Nếu chọn "Tất cả" hoặc trùng danh mục thì hiện ra, ngược lại giấu đi
-                if (tenDanhMuc === 'Tất cả' || category === tenDanhMuc) {
+                let pCatId = p.getAttribute('data-category');
+                // So sánh chuỗi hoặc ID
+                if (catId === 'Tất cả' || pCatId === catId.toString()) {
                     p.style.display = 'block';
                 } else {
                     p.style.display = 'none';
@@ -213,7 +225,6 @@
             let billContainer = document.querySelector('.bill-items');
             let totalQuantityEl = document.getElementById('total-quantity');
             let totalPriceEl = document.getElementById('total-price');
-
             billContainer.innerHTML = '';
             let totalQty = 0;
             let totalPrice = 0;
@@ -230,60 +241,43 @@
                     let itemTotal = item.price * item.quantity;
                     totalQty += item.quantity;
                     totalPrice += itemTotal;
-
                     billContainer.innerHTML += `
                         <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
                             <div class="fw-bold text-dark w-50">${item.name}</div>
-
                             <div class="d-flex align-items-center">
                                 <button class="btn btn-sm btn-outline-danger px-2 py-0" onclick="changeQuantity(${item.id}, -1)">-</button>
                                 <span class="mx-2 fw-bold text-dark">${item.quantity}</span>
                                 <button class="btn btn-sm btn-outline-success px-2 py-0" onclick="changeQuantity(${item.id}, 1)">+</button>
                             </div>
-
                             <div class="fw-bold text-primary text-end w-25">
                                 ${itemTotal.toLocaleString('vi-VN')} đ
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
             }
-
             totalQuantityEl.innerText = totalQty;
             totalPriceEl.innerText = totalPrice.toLocaleString('vi-VN') + ' đ';
         }
 
         function thanhToan() {
-            if (cart.length === 0) {
-                alert("Giỏ hàng đang trống! Vui lòng chọn ít nhất 1 sản phẩm.");
-                return;
-            }
-
-            if (!confirm("Xác nhận thanh toán hóa đơn này?")) {
-                return;
-            }
+            if (cart.length === 0) { alert("Giỏ hàng đang trống!"); return; }
+            if (!confirm("Xác nhận thanh toán?")) return;
 
             fetch('/Employee/Home/XuLyThanhToanPOS', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(cart)
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert("✅ Thanh toán thành công! Đã lưu vào doanh thu.");
-                    cart = [];
-                    renderCart();
+                    alert("✅ Thanh toán thành công!");
+                    window.location.reload();
                 } else {
-                    alert("❌ Có lỗi xảy ra: " + data.message);
+                    alert("❌ Lỗi: " + data.message);
                 }
             })
-            .catch(error => {
-                console.error('Lỗi:', error);
-                alert("❌ Lỗi kết nối đến máy chủ!");
-            });
+            .catch(error => { alert("❌ Lỗi kết nối!"); });
         }
     </script>
 }

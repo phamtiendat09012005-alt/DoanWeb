@@ -31,10 +31,27 @@ namespace THLTW_B2.Areas.Employee.Controllers
         // 1. QUẢN LÝ ĐẶT SÂN
         // ==========================================
 
+
         public async Task<IActionResult> YeuCauDatSan(string tab = "donngay")
         {
             ViewBag.CurrentTab = tab;
 
+            // 1. NẾU NHÂN VIÊN BẤM VÀO TAB "TÌM ĐỐI THỦ"
+            if (tab == "timdoithu")
+            {
+                // Lấy dữ liệu từ bảng MatchRequests
+                var matchRequests = await _context.MatchRequests
+        .OrderByDescending(m => m.CreatedAt)
+        .ToListAsync();
+
+                // Gắn vào ViewBag để gửi sang giao diện
+                ViewBag.MatchRequests = matchRequests;
+
+                // Trả về danh sách Booking rỗng để model @model không bị lỗi
+                return View(new List<Booking>());
+            }
+
+            // 2. NẾU LÀ CÁC TAB ĐẶT SÂN BÌNH THƯỜNG (Giữ nguyên code cũ của bạn)
             var query = _context.Bookings
                 .Include(b => b.User)
                 .Include(b => b.SoccerField)
@@ -121,7 +138,7 @@ namespace THLTW_B2.Areas.Employee.Controllers
 
             return View(new Booking());
 
-       
+
         }
 
         [HttpPost]
@@ -170,8 +187,12 @@ namespace THLTW_B2.Areas.Employee.Controllers
         [HttpGet]
         public async Task<IActionResult> BanHang()
         {
-            var danhSachSanPham = await _context.Products.ToListAsync();
-            return View(danhSachSanPham);
+            // 1. Lấy danh mục để làm thanh lọc (Sửa 'Categories' thành tên bảng của bạn nếu khác)
+            ViewBag.Categories = await _context.Categories.ToListAsync();
+
+            // 2. Lấy danh sách sản phẩm
+            var products = await _context.Products.ToListAsync();
+            return View(products);
         }
 
         // ==========================================
@@ -195,11 +216,39 @@ namespace THLTW_B2.Areas.Employee.Controllers
                 return Json(new { success = false, message = "Giỏ hàng rỗng!" });
             }
 
+            // Bắt đầu một Transaction để đảm bảo: Nếu lỗi ở đâu thì hủy toàn bộ, không bị trừ tiền oan
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                decimal totalAmount = cart.Sum(item => item.Price * item.Quantity);
-                var chiTietMua = string.Join(", ", cart.Select(c => $"{c.Quantity}x {c.Name}"));
+                decimal totalAmount = 0;
+                var chiTietMua = new List<string>();
 
+                // 1. Duyệt qua từng món hàng để kiểm tra và trừ tồn kho
+                foreach (var item in cart)
+                {
+                    // Lấy sản phẩm từ DB ra (Dùng khóa chính là Id hoặc ProductId tùy model của bạn)
+                    var product = await _context.Products.FindAsync(item.Id);
+
+                    if (product == null)
+                    {
+                        return Json(new { success = false, message = $"Lỗi: Không tìm thấy sản phẩm '{item.Name}'." });
+                    }
+
+                    // Chốt chặn Backend: Kẻ gian dùng code bypass JavaScript cũng không mua quá số lượng được
+                    if (product.StockQuantity < item.Quantity)
+                    {
+                        return Json(new { success = false, message = $"Sản phẩm '{item.Name}' chỉ còn {product.StockQuantity} cái trong kho." });
+                    }
+
+                    // TRỪ TỒN KHO
+                    product.StockQuantity -= item.Quantity;
+
+                    // Tính tiền và ghi chú
+                    totalAmount += item.Price * item.Quantity;
+                    chiTietMua.Add($"{item.Quantity}x {item.Name}");
+                }
+
+                // 2. Tạo hóa đơn thanh toán
                 var newPayment = new Payment
                 {
                     InvoiceCode = "POS-" + DateTime.Now.ToString("yyyyMMddHHmmss"),
@@ -207,17 +256,21 @@ namespace THLTW_B2.Areas.Employee.Controllers
                     PaymentMethod = "Tiền mặt",
                     Status = "Thành công",
                     PaymentDate = DateTime.Now,
-                    Note = "Bán lẻ tại quầy: " + chiTietMua
+                    Note = "Bán lẻ: " + string.Join(", ", chiTietMua)
                 };
 
                 _context.Payments.Add(newPayment);
+
+                // 3. Lưu toàn bộ thay đổi (Trừ kho + Thêm hóa đơn)
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 return Json(new { success = true });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                await transaction.RollbackAsync(); // Có lỗi xảy ra thì hoàn tác lại kho
+                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
             }
         }
     }
