@@ -16,6 +16,7 @@ namespace THLTW_B2.DataAccess
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Team> Teams { get; set; }
         public DbSet<Expense> Expenses { get; set; }
+        public DbSet<EmployeeShift> EmployeeShifts { get; set; }
     }
 
 }

@@ -104,10 +104,44 @@
                     <i class="bi bi-people-fill"></i> Quản Lý Nhân Viên
                 </a>
             </li>
+
             <li class="nav-item">
-                <a href="/Admin/Revenue" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Revenue" ? "active" : "")">
-                    <i class="bi bi-cash-coin"></i> Báo cáo Tài chính
+                <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Revenue" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Payroll" ? "active" : "")"
+                   data-bs-toggle="collapse" href="#revenueMenu" role="button" aria-expanded="false" aria-controls="revenueMenu"
+                   style="justify-content: space-between;">
+                    <div>
+                        <i class="bi bi-cash-coin"></i> Báo cáo Tài chính
+                    </div>
+                    <i class="bi bi-chevron-down" style="font-size: 0.8rem;"></i>
                 </a>
+
+                <div class="collapse @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Revenue" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Payroll" ? "show" : "")" id="revenueMenu">
+                    <ul class="nav flex-column" style="background-color: #1a1d20;">
+                        <li class="nav-item">
+                            <a href="/Admin/Revenue" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Revenue" ? "text-white fw-bold" : "")" style="padding-left: 45px; font-size: 0.9em; border-left: none;">
+                                <i class="bi bi-graph-up-arrow"></i> Doanh thu & Chi phí
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="/Admin/Payroll" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Payroll" && (ViewContext.RouteData.Values["Action"]?.ToString() == "Index" || ViewContext.RouteData.Values["Action"] == null) ? "text-white fw-bold" : "")" style="padding-left: 45px; font-size: 0.9em; border-left: none;">
+                                <i class="bi bi-wallet2"></i> Bảng chốt lương
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="/Admin/Payroll/DanhSachCaLam" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "DanhSachCaLam" ? "text-info fw-bold" : "")" style="padding-left: 45px; font-size: 0.9em; border-left: none;">
+                                <i class="bi bi-table text-info"></i> Lịch sử ca làm (Excel)
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="/Admin/Payroll/BangChamCong" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "BangChamCong" ? "text-warning fw-bold" : "")" style="padding-left: 45px; font-size: 0.9em; border-left: none;">
+                                <i class="bi bi-grid-3x3 text-warning"></i> Bảng chấm công (Tháng)
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
         </ul>
     </nav>
@@ -135,4 +169,4 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
-</html>s
+</html>
