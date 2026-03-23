@@ -18,6 +18,9 @@
     <link href="/Temp/css/responsive.css" rel="stylesheet" />
 
     <style>
+        html {
+            scroll-behavior: smooth;
+        }
         .heading_container h2 span,
         .slider_section .detail-box h1 span {
             color: #007bff !important;
@@ -52,6 +55,19 @@
         .footer_section {
             background-color: #002244 !important;
         }
+
+        .carousel-indicators li {
+            color: #adb5bd !important; /* Màu xám cho số bình thường */
+            font-weight: 800;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+            .carousel-indicators li.active {
+                color: #007bff !important; /* Màu xanh dương đồng bộ với giao diện */
+                transform: scale(1.3);
+                opacity: 1 !important;
+            }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -80,10 +96,10 @@
                                 <a class="nav-link" asp-controller="TimDoiThu" asp-action="Index">TÌM ĐỐI THỦ</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="/leaderboard">Bảng Xếp Hạng</a>
+                                <a class="nav-link" href="/CuaHang">CỬA HÀNG</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="/contact">Liên Hệ</a>
+                                <a class="nav-link" href="#footer-contact">Liên Hệ</a>
                             </li>
                         </ul>
                         <partial name="_LoginPartial" />
@@ -97,7 +113,7 @@
         @RenderBody()
     </main>
 
-    <footer class="info_section layout_padding2-top">
+    <footer id="footer-contact" class="info_section layout_padding2-top">
         <div class="info_container">
             <div class="container">
                 <div class="row text-white">
