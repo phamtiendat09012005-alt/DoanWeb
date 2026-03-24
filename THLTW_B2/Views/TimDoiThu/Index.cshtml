@@ -97,13 +97,31 @@
                     @if (ViewBag.IsMember != null && (bool)ViewBag.IsMember)
                     {
                         <div class="mb-3"><label class="form-label fw-bold small">Ngày thi đấu *</label><input type="date" id="dateInput" class="form-control"></div>
-                        <div class="mb-3"><label class="form-label fw-bold small">Khung giờ *</label><select id="timeSlotInput" class="form-select"><option value="17:30 - 19:00">17:30 - 19:00</option><option value="19:00 - 20:30">19:00 - 20:30</option><option value="20:30 - 22:00">20:30 - 22:00</option></select></div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Khung giờ *</label>
+                            <select id="timeSlotInput" class="form-select">
+                                <option value="06:00 - 07:30">06:00 - 07:30 (Sáng sớm)</option>
+                                <option value="07:30 - 09:00">07:30 - 09:00</option>
+                                <option value="09:00 - 10:30">09:00 - 10:30</option>
+                                <option value="10:30 - 12:00">10:30 - 12:00</option>
+
+                                <option value="14:30 - 16:00">14:30 - 16:00</option>
+                                <option value="16:00 - 17:30">16:00 - 17:30</option>
+
+                                <option value="17:30 - 19:00" selected>17:30 - 19:00 (Giờ vàng)</option>
+                                <option value="19:00 - 20:30">19:00 - 20:30 (Giờ vàng)</option>
+                                <option value="20:30 - 22:00">20:30 - 22:00 (Giờ vàng)</option>
+                            </select>
+                        </div>
                         <div class="mb-3"><label class="form-label fw-bold small">Tên đội</label><input type="text" id="teamNameInput" class="form-control bg-light" value="@ViewBag.MyTeamName" readonly></div>
                         <div class="mb-3"><label class="form-label fw-bold small">Số điện thoại</label><input type="text" id="phoneInput" class="form-control" value="@currentUser?.PhoneNumber"></div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold small">Tiền cọc (VNĐ) <span class="text-danger">*</span></label>
-                            <input type="number" id="depositInput" class="form-control fw-bold text-danger" value="100000" min="50000" step="10000" placeholder="Ví dụ: 100000">
+                         
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Tiền cọc (15% giá sân) <span class="text-danger">*</span></label>
+                                <input type="number" id="depositInput" class="form-control fw-bold text-danger bg-light" value="0" readonly>
+                            </div>
                         </div>
 
                         <div class="alert alert-info py-2 mb-3 small"><strong id="selectedPitchName">Chưa chọn sân</strong> - <span id="selectedPitchPrice">0đ</span></div>
@@ -135,7 +153,7 @@
                                             <div onclick="viewTeamStats('@item.TeamName')" style="cursor:pointer" class="fw-bold text-primary">@item.TeamName</div>
                                             @if (item.Status == "Đang chờ đối thủ")
                                             {
-                                                <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold" onclick="openAcceptModal('@item.TeamName', @item.Id)">Nhận Kèo</button>
+                                                <button class="btn btn-sm btn-success rounded-pill px-3 fw-bold" onclick="openAcceptModal('@item.TeamName', @item.Id, @item.TienCoc)">Nhận Kèo</button>
                                             }
                                             else
                                             {
@@ -167,7 +185,7 @@
                     <label class="form-label fw-bold small">Đội của bạn:</label>
                     <input type="text" id="acceptorNameInput" class="form-control" value="@ViewBag.MyTeamName" placeholder="Tên đội nhận kèo">
                 </div>
-                <p class="mb-2">Vui lòng quét mã QR chuyển cọc <strong>100,000đ</strong>:</p>
+                <p class="mb-2">Vui lòng quét mã QR chuyển cọc <strong id="qrAcceptAmountDisplay" class="text-danger fs-5">0đ</strong>:</p>
                 <div class="bg-light p-3 rounded-4 mb-3 border shadow-sm">
                     <img id="qrCodeImg" src="" class="img-fluid rounded mb-2" style="max-width: 180px; border: 3px solid #fff;">
                     <h6 class="mt-2 fw-bold text-primary mb-0" id="qrNoteText">NỘI DUNG: NHANKEO</h6>
@@ -239,13 +257,33 @@
         let pendingMatchData = null; // Biến lưu tạm dữ liệu kèo mới
 
         connection.start().then(() => console.log("SignalR: Ready")).catch(e => console.error(e));
+        // 1. KHÓA NGÀY QUÁ KHỨ VÀ RESET SÂN KHI ĐỔI GIỜ
+        document.addEventListener("DOMContentLoaded", function() {
+            // Lấy ngày hôm nay chuẩn theo múi giờ để set thuộc tính min
+            let today = new Date();
+            let tzoffset = today.getTimezoneOffset() * 60000;
+            let localISOTime = (new Date(today - tzoffset)).toISOString().slice(0, 10);
 
+            // Ép ô Date không cho chọn ngày hôm qua trở về trước
+            document.getElementById("dateInput").setAttribute('min', localISOTime);
+
+            // Khách lươn lẹo đổi giờ sau khi đã chọn sân => Bắt chọn lại sân từ đầu
+            document.getElementById("dateInput").addEventListener("change", resetPitch);
+            document.getElementById("timeSlotInput").addEventListener("change", resetPitch);
+        });
+
+        function resetPitch() {
+            document.getElementById("selectedPitchName").innerText = "Chưa chọn sân";
+            document.getElementById("selectedPitchPrice").innerText = "0đ";
+            document.getElementById("depositInput").value = "0";
+        }
         // --- XỬ LÝ NHẬN KÈO CŨ ---
-        function openAcceptModal(poster, id) {
+        function openAcceptModal(poster, id, tienCoc) {
             currentPoster = poster;
             currentMatchId = id;
+            document.getElementById("qrAcceptAmountDisplay").innerText = tienCoc.toLocaleString() + " VNĐ";
             document.getElementById("qrNoteText").innerText = "NỘI DUNG: NHANKEO_" + id;
-            document.getElementById("qrCodeImg").src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=NHANKEO_" + id;
+            document.getElementById("qrCodeImg").src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=NHANKEO_${id}_${tienCoc}`;
             new bootstrap.Modal(document.getElementById('modalNhanKeo')).show();
         }
 
@@ -285,24 +323,74 @@
                 new bootstrap.Modal(document.getElementById('teamStatsModal')).show();
             } catch (e) { alert("Lỗi tải thông tin!"); }
         }
+        function tinhSoGioDa(khungGio) {
+            try {
+                // Tách "17:30 - 19:00" ra thành 2 khoảng
+                let gio = khungGio.split('-');
+                let batDau = gio[0].trim().split(':');
+                let ketThuc = gio[1].trim().split(':');
 
+                // Đổi ra phút để trừ cho dễ
+                let phutBatDau = parseInt(batDau[0]) * 60 + parseInt(batDau[1]);
+                let phutKetThuc = parseInt(ketThuc[0]) * 60 + parseInt(ketThuc[1]);
+
+                // Trả về số giờ (90 phút / 60 = 1.5 giờ)
+                return (phutKetThuc - phutBatDau) / 60;
+            } catch (e) {
+                return 1.5; // Mặc định 1.5 tiếng nếu có lỗi
+            }
+        }
+        // --- XỬ LÝ CHỌN SÂN TỰ TÍNH 15% ---
+        // 2. HÀM TÌM SÂN VÀ HIỂN THỊ TỔNG TIỀN (Có chặn giờ quá khứ)
         async function checkAvailablePitches() {
-            const date = document.getElementById("dateInput").value;
-            const time = document.getElementById("timeSlotInput").value;
-            if (!date) return alert("Vui lòng chọn ngày trước!");
-            const r = await fetch(`/TimDoiThu/GetPitchesStatus?date=${date}&timeSlot=${time}`);
+            const dateVal = document.getElementById("dateInput").value;
+            const timeVal = document.getElementById("timeSlotInput").value;
+            if (!dateVal) return alert("Vui lòng chọn ngày trước!");
+
+            // --- KIỂM TRA THỜI GIAN: BẮT ĐẦU ---
+            // Lấy giờ bắt đầu của ca đá (VD: "14:30")
+            let startTimeStr = timeVal.split('-')[0].trim();
+            let [hours, minutes] = startTimeStr.split(':');
+
+            // Ghép Ngày + Giờ khách chọn thành 1 mốc thời gian hoàn chỉnh
+            let selectedDateTime = new Date(dateVal);
+            selectedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            let now = new Date();
+
+            // Nếu ngày giờ khách chọn NHỎ HƠN hoặc BẰNG hiện tại => Đá văng ra
+            if (selectedDateTime <= now) {
+                return alert("Ca đá này đã qua rồi sếp ơi! Vui lòng chọn khung giờ hoặc ngày khác nhé.");
+            }
+            // --- KIỂM TRA THỜI GIAN: KẾT THÚC ---
+
+            const soGioDa = tinhSoGioDa(timeVal);
+            const r = await fetch(`/TimDoiThu/GetPitchesStatus?date=${dateVal}&timeSlot=${timeVal}`);
             const p = await r.json();
             let html = "";
             p.forEach(s => {
-                if(!s.isBooked) html += `<button class="list-group-item list-group-item-action py-3" onclick="selectPitch('${s.name}', '${s.price.toLocaleString()}')"><b>${s.name}</b> - <span class="text-success">${s.price.toLocaleString()}đ</span></button>`;
+                let tongTien = s.price * soGioDa;
+
+                if(!s.isBooked) {
+                    html += `<button class="list-group-item list-group-item-action py-3 text-start" onclick="selectPitch('${s.name}', ${tongTien})">
+                                <b class="fs-6">${s.name}</b>
+                                <br/>
+                                <small class="text-muted">Đơn giá: ${s.price.toLocaleString()}đ/giờ x ${soGioDa} giờ</small>
+                                <span class="float-end text-success fw-bold fs-6">Tổng: ${tongTien.toLocaleString()}đ</span>
+                             </button>`;
+                }
             });
-            document.getElementById("pitchListContainer").innerHTML = html || "<div class='p-3'>Hết sân trống trong khung giờ này!</div>";
+            document.getElementById("pitchListContainer").innerHTML = html || "<div class='p-3 text-danger fw-bold'>Hết sân trống trong khung giờ này!</div>";
             new bootstrap.Modal(document.getElementById('pitchModal')).show();
         }
 
-        function selectPitch(n, p) {
+        function selectPitch(n, tongTienSan) {
             document.getElementById("selectedPitchName").innerText = n;
-            document.getElementById("selectedPitchPrice").innerText = p + "đ";
+            document.getElementById("selectedPitchPrice").innerText = "Tổng tiền: " + tongTienSan.toLocaleString() + "đ";
+
+            // TỰ ĐỘNG TÍNH CỌC 15% CỦA TỔNG TIỀN (VD: 15% của 750k = 112,500đ)
+            let tienCoc = Math.round(tongTienSan * 0.15);
+            document.getElementById("depositInput").value = tienCoc;
+
             bootstrap.Modal.getInstance(document.getElementById('pitchModal')).hide();
         }
 
@@ -353,4 +441,4 @@
             });
         }
     </script>
-}
+}h

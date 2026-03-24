@@ -22,6 +22,7 @@ namespace THLTW_B2.DataAccess
         public DbSet<Expense> Expenses { get; set; }
         public DbSet<Payment> Payments { get; set; }
 
+        public DbSet<EmployeeShift> EmployeeShifts { get; set; }
     }
 
 }

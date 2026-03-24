@@ -1,0 +1,199 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model THLTW_B2.Models.Booking
+@{
+    Layout = "~/Areas/Employee/Views/Shared/_EmployeeLayout.cshtml";
+    ViewData["Title"] = "Tạo lịch đặt mới";
+}
+
+<div class="container mt-4" style="margin-left: 280px; width: calc(100% - 280px);">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-header bg-success text-white rounded-top-4">
+            <h4 class="mb-0"><i class="fa-solid fa-plus-circle me-2"></i>Thêm Lịch Đặt Sân</h4>
+        </div>
+
+        <div class="card-body p-4">
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    <div asp-validation-summary="All" class="text-danger mb-0"></div>
+                </div>
+            }
+
+            <form asp-action="Create" method="post" id="formDatSan">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Chọn Sân <span class="text-danger">*</span></label>
+                        <select asp-for="SoccerFieldId" class="form-select" required>
+                            <option value="">-- Chọn sân bóng --</option>
+                            @if (ViewBag.ListSan != null)
+                            {
+                                foreach (var san in ViewBag.ListSan)
+                                {
+                                    <option value="@san.FieldId">@san.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Khách hàng <span class="text-danger">*</span></label>
+                        <select asp-for="UserId" class="form-select" required>
+                            <option value="">-- Chọn khách hàng --</option>
+                            <option value="GUEST" class="fw-bold text-primary">-- Khách tự do (Khách vãng lai) --</option>
+                            @if (ViewBag.ListKhach != null)
+                            {
+                                foreach (var khach in ViewBag.ListKhach)
+                                {
+                                    <option value="@khach.Id">@khach.FullName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Ngày đặt <span class="text-danger">*</span></label>
+                        <input asp-for="BookingDate" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Khung giờ <span class="text-danger">*</span></label>
+                        <select asp-for="TimeSlot" class="form-select" required>
+                            <option value="">-- Chọn khung giờ --</option>
+                            <option value="06:00 - 07:30">06:00 - 07:30 (Sáng sớm)</option>
+                            <option value="07:30 - 09:00">07:30 - 09:00</option>
+                            <option value="09:00 - 10:30">09:00 - 10:30</option>
+                            <option value="10:30 - 12:00">10:30 - 12:00</option>
+                            <option value="14:30 - 16:00">14:30 - 16:00</option>
+                            <option value="16:00 - 17:30">16:00 - 17:30</option>
+                            <option value="17:30 - 19:00">17:30 - 19:00 (Giờ vàng)</option>
+                            <option value="19:00 - 20:30">19:00 - 20:30 (Giờ vàng)</option>
+                            <option value="20:30 - 22:00">20:30 - 22:00 (Giờ vàng)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Tổng tiền (VNĐ)</label>
+                        <input asp-for="TotalPrice" type="number" class="form-control bg-light fw-bold text-danger" readonly />
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Ghi chú</label>
+                        <textarea asp-for="Note" class="form-control" rows="3" placeholder="Ghi chú thêm (nếu có)"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Lưu lịch đặt
+                    </button>
+
+                    <a asp-action="YeuCauDatSan" class="btn btn-outline-secondary px-4 ms-2 fw-bold shadow-sm">
+                        Quay lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="paymentModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-qrcode me-2"></i>Mã QR Thu Cọc Tại Quầy</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="mb-2">Khách hàng quét mã để thanh toán <strong>30% tiền cọc</strong>:</p>
+                <h3 class="text-danger fw-bold mb-3" id="modalTotalAmount">0 đ</h3>
+
+                <div class="bg-light p-3 rounded mb-3 border">
+                    <img id="qrImage" src="" alt="QR" class="img-fluid shadow-sm mb-2" style="max-width: 200px;">
+                    <p class="small text-muted mb-0">Nội dung CK: <strong id="modalPaymentContent"></strong></p>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-secondary px-4 me-2" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success px-4 fw-bold" onclick="thucSuLuuDon()">
+                    <i class="fa-solid fa-check-circle me-1"></i>Đã nhận đủ cọc
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sanSelect = document.getElementById("SoccerFieldId");
+            const gioSelect = document.getElementById("TimeSlot");
+            const tongTienInput = document.getElementById("TotalPrice");
+            const formObj = document.getElementById("formDatSan");
+
+            const giaSanList = {
+                @if (ViewBag.ListSan != null)
+                {
+                        foreach (var san in ViewBag.ListSan)
+                        {
+                                <text>"@san.FieldId": @san.PricePerHour,</text>
+                        }
+                }
+            };
+
+            function tinhTien() {
+                let idSan = sanSelect.value;
+                let khungGio = gioSelect.value;
+
+                if (idSan && khungGio) {
+                    let gio = khungGio.split('-');
+                    let batDau = gio[0].trim().split(':');
+                    let ketThuc = gio[1].trim().split(':');
+                    let soPhut = (parseInt(ketThuc[0]) * 60 + parseInt(ketThuc[1])) - (parseInt(batDau[0]) * 60 + parseInt(batDau[1]));
+                    let soGioDa = soPhut / 60;
+
+                    let gia1Gio = giaSanList[idSan] || 0;
+                    let tongTien = gia1Gio * soGioDa;
+
+                    tongTienInput.value = tongTien;
+                } else {
+                    tongTienInput.value = 0;
+                }
+            }
+
+            sanSelect.addEventListener("change", tinhTien);
+            gioSelect.addEventListener("change", tinhTien);
+
+            formObj.addEventListener("submit", function (e) {
+                e.preventDefault();
+
+                let tongTien = tongTienInput.value;
+                if(tongTien <= 0 || !sanSelect.value || !gioSelect.value) {
+                    alert("Vui lòng chọn đủ Sân và Giờ trước khi thanh toán!");
+                    return;
+                }
+
+                // ==========================================
+                // LOGIC MỚI: TÍNH CỌC 30%
+                // ==========================================
+                let tienCoc = Math.round(tongTien * 0.3);
+
+                // Cập nhật số TIỀN CỌC lên Modal thay vì Tổng tiền
+                document.getElementById("modalTotalAmount").innerText = parseInt(tienCoc).toLocaleString('vi-VN') + " đ";
+
+                let ngayDat = document.getElementById("BookingDate").value.replace(/-/g, '');
+                let noiDungCK = "ThuCocSan_" + ngayDat;
+                document.getElementById("modalPaymentContent").innerText = noiDungCK;
+
+                // Nhét biến tienCoc (30%) vào mã QR
+                document.getElementById("qrImage").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${noiDungCK}_${tienCoc}`;
+
+                let paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+                paymentModal.show();
+            });
+        });
+
+        function thucSuLuuDon() {
+            document.getElementById("formDatSan").submit();
+        }
+    </script>
+}

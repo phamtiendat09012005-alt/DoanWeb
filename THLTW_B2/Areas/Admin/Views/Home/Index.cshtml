@@ -2,20 +2,59 @@
 
 @{
     ViewData["Title"] = "Tổng Quan Bảng Điều Khiển";
-    // Không còn dòng Layout = null nữa
-    // Khung giao diện (Sidebar, CSS) sẽ tự động được load từ _AdminLayout.cshtml
-
+    // Khung giao diện (Sidebar, CSS) sẽ tự động được load từ _Layout.cshtml thông qua @RenderBody()
 }
+
+<style>
+    /* CSS làm đẹp riêng cho các khối thống kê của trang Tổng quan */
+    .stat-card {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 5px solid;
+        transition: transform 0.2s;
+        height: 100%;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card p {
+            margin-bottom: 5px;
+            color: #6c757d;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .stat-card h3 {
+            margin-bottom: 0;
+            font-weight: bold;
+            color: #212529;
+        }
+
+    .stat-icon {
+        font-size: 2.5rem;
+    }
+</style>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3">
-        <div class="stat-card" style="border-left-color: #198754;">
-            <div>
-                <p>Doanh Thu Hôm Nay</p>
-                <h3>@Model.TodayRevenue.ToString("N0")₫</h3>
+        <a href="/Admin/Revenue" class="text-decoration-none text-dark">
+            <div class="stat-card" style="border-left-color: #198754; cursor: pointer;">
+                <div>
+                    <p>Doanh Thu Hôm Nay</p>
+                    <h3 class="text-success">@Model.TodayRevenue.ToString("N0")₫</h3>
+                    <small class="text-muted mt-1 d-block"><i class="bi bi-arrow-right-circle"></i> Xem báo cáo chi tiết</small>
+                </div>
+                <i class="bi bi-cash-coin stat-icon text-success"></i>
             </div>
-            <i class="bi bi-cash-coin stat-icon" style="color: #198754;"></i>
-        </div>
+        </a>
     </div>
 
     <div class="col-md-3">
@@ -24,7 +63,7 @@
                 <p>Lượt Đặt Mới</p>
                 <h3>@Model.NewBookings</h3>
             </div>
-            <i class="bi bi-calendar-plus stat-icon" style="color: #0d6efd;"></i>
+            <i class="bi bi-calendar-plus stat-icon text-primary"></i>
         </div>
     </div>
 
@@ -34,7 +73,7 @@
                 <p>Kèo Đang Chờ Ghép</p>
                 <h3>@Model.PendingMatches</h3>
             </div>
-            <i class="bi bi-people stat-icon" style="color: #ffc107;"></i>
+            <i class="bi bi-people stat-icon text-warning"></i>
         </div>
     </div>
 
@@ -44,51 +83,85 @@
                 <p>Hàng Sắp Hết (< 10)</p>
                 <h3>@Model.LowStockProducts món</h3>
             </div>
-            <i class="bi bi-box-seam stat-icon" style="color: #dc3545;"></i>
+            <i class="bi bi-box-seam stat-icon text-danger"></i>
         </div>
     </div>
 </div>
 
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h6 class="mb-0 fw-bold"><i class="bi bi-list-task"></i> Yêu cầu đặt sân mới nhất</h6>
-        <a href="/Admin/Bookings" class="btn btn-sm btn-primary">Xem tất cả</a>
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-list-task me-2 text-primary"></i>Yêu cầu đặt sân mới nhất</h6>
+        <a href="/Admin/Bookings" class="btn btn-sm btn-primary px-3">Xem tất cả</a>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Mã Booking</th>
+                        <th class="ps-4">Mã Booking</th>
                         <th>Khách Hàng</th>
                         <th>Sân</th>
                         <th>Thời Gian</th>
                         <th>Trạng Thái</th>
-                        <th>Hành Động</th>
+                        <th class="text-center">Hành Động</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>#BK10023</td>
-                        <td>Nguyễn Văn A</td>
-                        <td>Sân 5 Người - Số 1</td>
-                        <td>18:00 - 19:30 | Hôm nay</td>
-                        <td><span class="badge bg-warning text-dark">Chờ Duyệt</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-success"><i class="bi bi-check-lg"></i></button>
-                            <button class="btn btn-sm btn-danger"><i class="bi bi-x-lg"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>#BK10022</td>
-                        <td>Trần Thị B</td>
-                        <td>Sân 7 Người - Số 3</td>
-                        <td>19:30 - 21:00 | Hôm nay</td>
-                        <td><span class="badge bg-success">Đã Duyệt</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-check-lg"></i></button>
-                        </td>
-                    </tr>
+                    @if (Model.RecentBookings != null && Model.RecentBookings.Any())
+                    {
+                        foreach (var item in Model.RecentBookings)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold text-secondary">#BK@(item.Id.ToString("D5"))</td>
+
+                                <td class="fw-bold">@(item.User?.FullName ?? item.User?.UserName ?? "Khách")</td>
+
+                                <td>@(item.SoccerField?.Name ?? $"Sân ID: {item.SoccerFieldId}")</td>
+
+                                <td>@item.TimeSlot | @item.BookingDate.ToString("dd/MM/yyyy")</td>
+
+                                <td>
+                                    @if (item.Status == "Chờ Duyệt" || item.Status == "Đã cọc")
+                                    {
+                                        <span class="badge bg-warning text-dark px-2 py-1">@item.Status</span>
+                                    }
+                                    else if (item.Status == "Đã hoàn thành" || item.Status == "Đã Duyệt")
+                                    {
+                                        <span class="badge bg-success px-2 py-1">@item.Status</span>
+                                    }
+                                    else if (item.Status == "Đã hủy")
+                                    {
+                                        <span class="badge bg-danger px-2 py-1">@item.Status</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary px-2 py-1">@item.Status</span>
+                                    }
+                                </td>
+
+                                <td class="text-center">
+                                    <a href="/Admin/Bookings/Details/@item.Id" class="btn btn-sm btn-info text-white shadow-sm" title="Xem chi tiết">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                    @if (item.Status == "Chờ Duyệt" || item.Status == "Đã cọc")
+                                    {
+                                        <button class="btn btn-sm btn-success shadow-sm ms-1" title="Duyệt/Xác nhận"><i class="bi bi-check-lg"></i></button>
+                                        <button class="btn btn-sm btn-danger shadow-sm ms-1" title="Từ chối/Hủy"><i class="bi bi-x-lg"></i></button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                Hiện tại chưa có yêu cầu đặt sân nào.
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>

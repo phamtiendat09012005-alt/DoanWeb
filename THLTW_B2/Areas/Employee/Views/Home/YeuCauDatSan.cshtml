@@ -6,7 +6,7 @@
 }
 
 <style>
-    /* BẢN VÁ LỖI GIAO DIỆN CHỒNG CHÉO */
+    /* ... (Toàn bộ phần <style> của bạn giữ nguyên, mình rút gọn để dễ nhìn) ... */
     .dashboard-wrapper {
         margin-left: 260px;
         width: calc(100% - 260px);
@@ -15,16 +15,12 @@
         min-height: 100vh;
     }
 
-    /* Tinh chỉnh cho màn hình điện thoại (Sidebar bị ẩn/thu gọn) */
     @@media (max-width: 991.98px) {
-        .dashboard-wrapper
-
-    {
-        margin-left: 0;
-        width: 100%;
-        padding: 15px;
-    }
-
+        .dashboard-wrapper {
+            margin-left: 0;
+            width: 100%;
+            padding: 15px;
+        }
     }
 
     .container-fluid {
@@ -34,7 +30,6 @@
         padding-right: 0;
     }
 
-    /* Tinh chỉnh làm đẹp bảng Web */
     .table thead th {
         border-top: none;
         font-size: 13px;
@@ -82,23 +77,25 @@
 
     <div class="card custom-card mb-4">
         <div class="card-header bg-white border-0 pt-3 pb-0">
-            <ul class="nav nav-pills nav-fill p-1 bg-light rounded-3">
+            <ul class="nav nav-pills nav-fill p-1 bg-light rounded-3 mb-2">
                 <li class="nav-item">
-                    <a class="nav-link @(currentTab == "donngay" ? "active bg-success shadow" : "text-dark")"
-                       href="@Url.Action("YeuCauDatSan", new { tab = "donngay" })">
-                        <i class="fa-solid fa-clock-rotate-left me-1"></i> Đơn ngày (Đang chờ)
+                    <a class="nav-link @(currentTab == "donngay" ? "active bg-success shadow" : "text-dark")" asp-action="YeuCauDatSan" asp-route-tab="donngay">
+                        <i class="fa-solid fa-clock-rotate-left me-1"></i> Đơn ngày
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(currentTab == "doncodinh" ? "active bg-success shadow" : "text-dark")"
-                       href="@Url.Action("YeuCauDatSan", new { tab = "doncodinh" })">
-                        <i class="fa-solid fa-calendar-days me-1"></i> Đơn cố định (Tháng)
+                    <a class="nav-link @(currentTab == "doncodinh" ? "active bg-success shadow" : "text-dark")" asp-action="YeuCauDatSan" asp-route-tab="doncodinh">
+                        <i class="fa-solid fa-calendar-days me-1"></i> Đơn cố định
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(currentTab == "tatca" ? "active bg-success shadow" : "text-dark")"
-                       href="@Url.Action("YeuCauDatSan", new { tab = "tatca" })">
-                        <i class="fa-solid fa-list me-1"></i> Tất cả lịch đặt
+                    <a class="nav-link @(currentTab == "tatca" ? "active bg-success shadow" : "text-dark")" asp-action="YeuCauDatSan" asp-route-tab="tatca">
+                        <i class="fa-solid fa-list me-1"></i> Tất cả
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(currentTab == "timdoithu" ? "active bg-danger text-white shadow fw-bold" : "text-danger fw-bold")" asp-action="YeuCauDatSan" asp-route-tab="timdoithu">
+                        <i class="fa-solid fa-fire me-1"></i> Sân Tìm Đối Thủ
                     </a>
                 </li>
             </ul>
@@ -106,95 +103,219 @@
 
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr class="text-uppercase text-muted">
-                            <th class="ps-3">Mã đơn</th>
-                            <th>Khách hàng</th>
-                            <th>Sân bóng</th>
-                            <th>Khung giờ</th>
-                            <th>Tổng tiền</th>
-                            <th>Trạng thái</th>
-                            <th class="text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (!Model.Any())
-                        {
-                            <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">
-                                    <i class="fa-solid fa-folder-open fa-3x mb-3 d-block opacity-25"></i>
-                                    Hiện chưa có dữ liệu cho mục này.
-                                </td>
+
+                @* ======================================================= *@
+                @* KHU VỰC 1: NẾU ĐANG Ở TAB TÌM ĐỐI THỦ THÌ HIỆN BẢNG NÀY *@
+                @* ======================================================= *@
+                @if (currentTab == "timdoithu")
+                {
+                    var matchList = ViewBag.MatchRequests as List<THLTW_B2.Models.MatchRequest>;
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead>
+                            <tr class="text-uppercase text-danger bg-danger-subtle">
+                                <th>Ngày & Giờ</th>
+                                <th>Sân bóng</th>
+                                <th>Chủ nhà</th>
+                                <th>Đối thủ</th>
+                                <th>Trạng thái</th>
                             </tr>
-                        }
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="ps-3 fw-bold text-primary">#@item.Id</td>
-                                <td>
-                                    <div class="fw-bold text-dark">@(item.User?.FullName ?? "Khách lẻ")</div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1">
-                                        <i class="fa-solid fa-futbol me-1"></i> @item.SoccerField?.Name
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="fw-bold text-dark">@(item.User?.FullName ?? "Khách lẻ")</div>
-                                    @if (item.Note != null && item.Note.Contains("Trận giao hữu"))
-                                    {
-                                        <span class="badge bg-info-subtle text-info border border-info-subtle small">
-                                            <i class="fa-solid fa-handshake me-1"></i> Giao hữu
+                        </thead>
+                        <tbody>
+                            @if (matchList != null && matchList.Any())
+                            {
+                                foreach (var item in matchList)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="fw-bold">@item.MatchDate.ToString("dd/MM/yyyy")</span><br />
+                                            <small class="text-muted">@item.TimeSlot</small>
+                                        </td>
+                                        <td class="fw-bold text-success">@item.PitchName</td>
+                                        <td>
+                                            @item.TeamName <br />
+                                            <small class="text-muted">@item.Phone</small>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(item.OpponentTeamName))
+                                            {
+                                                <span class="fw-bold">@item.OpponentTeamName</span>
+                                                <br />
+                                                <small class="text-muted">@item.OpponentPhone</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary opacity-50">Đang chờ...</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.Status != "Đang chờ đối thủ")
+                                            {
+                                                <span class="badge bg-success"><i class="fa-solid fa-check"></i> Đã chốt</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark"><i class="fa-solid fa-spinner"></i> Chờ nhận kèo</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="fa-solid fa-fire-extinguisher fa-3x mb-3 d-block opacity-25"></i>
+                                        Hiện chưa có yêu cầu tìm đối thủ nào.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                @* ======================================================= *@
+                @* KHU VỰC 2: CÁC TAB CÒN LẠI THÌ HIỆN BẢNG ĐẶT SÂN CŨ *@
+                @* ======================================================= *@
+                else
+                {
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="text-uppercase text-muted">
+                                <th class="ps-3">Mã đơn</th>
+                                <th>Khách hàng</th>
+                                <th>Sân bóng</th>
+                                <th>Khung giờ</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Any())
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="fa-solid fa-folder-open fa-3x mb-3 d-block opacity-25"></i>
+                                        Hiện chưa có dữ liệu cho mục này.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-3 fw-bold text-primary">#@item.Id</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@(item.User?.FullName ?? "Khách lẻ")</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1">
+                                            <i class="fa-solid fa-futbol me-1"></i> @item.SoccerField?.Name
                                         </span>
-                                    }
-                                </td>
-                                <td>
-                                    <div class="fw-bold text-dark">@item.TimeSlot</div>
-                                    <small class="text-muted">@item.BookingDate.ToString("dd/MM/yyyy")</small>
-                                </td>
-                                <td>
-                                    <div class="fw-bold text-dark">@item.TotalPrice.ToString("N0") đ</div>
-                                    <small class="text-warning fw-bold">Cọc: @item.DepositAmount.ToString("N0") đ</small>
-                                </td>
-                                <td>
-                                    @{
-                                        string badgeClass = item.Status == "Chờ duyệt" ? "bg-warning text-dark" :
-                                        item.Status == "Đã hoàn thành" ? "bg-success" :
-                                        item.Status == "Đã hủy" ? "bg-danger" : "bg-info";
-                                    }
-                                    <span class="badge @badgeClass px-3 py-2 rounded-pill">@item.Status</span>
-                                </td>
-                                <td class="text-center">
-                                    <div class="btn-group">
-                                        @if (item.Status == "Chờ duyệt")
-                                        {
-                                            <form asp-action="XacNhanDon" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                <button type="submit" class="btn btn-sm btn-outline-warning mx-1" title="Xác nhận">
-                                                    <i class="fa-solid fa-check"></i>
-                                                </button>
-                                            </form>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@item.TimeSlot</div>
+                                        <small class="text-muted">@item.BookingDate.ToString("dd/MM/yyyy")</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@item.TotalPrice.ToString("N0") đ</div>
+                                        <small class="text-warning fw-bold">Cọc: @item.DepositAmount.ToString("N0") đ</small>
+                                    </td>
+                                    <td>
+                                        @{
+                                            string badgeClass = item.Status == "Chờ duyệt" ? "bg-warning text-dark" :
+                                            item.Status == "Đã hoàn thành" ? "bg-success" :
+                                            item.Status == "Đã hủy" ? "bg-danger" : "bg-info";
                                         }
-                                        else if (item.Status != "Đã hoàn thành" && item.Status != "Đã hủy")
-                                        {
-                                            <form asp-action="DuyetDon" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                <button type="submit" class="btn btn-sm btn-outline-success mx-1" title="Hoàn thành">
+                                        <span class="badge @badgeClass px-3 py-2 rounded-pill">@item.Status</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group">
+                                            @if (item.Status == "Chờ duyệt")
+                                            {
+                                                <form asp-action="XacNhanDon" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning mx-1" title="Xác nhận"><i class="fa-solid fa-check"></i></button>
+                                                </form>
+                                            }
+                                            else if (item.Status != "Đã hoàn thành" && item.Status != "Đã hủy")
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-success mx-1" title="Hoàn thành & Thu 70%"
+                                                        onclick="hienThiQRThu70PhanTram(@item.Id, @item.TotalPrice, @item.DepositAmount, '@item.BookingDate.ToString("yyyyMMdd")')">
                                                     <i class="fa-solid fa-cash-register"></i>
                                                 </button>
+                                            }
+                                            <form asp-action="HuyDon" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Hủy lịch đặt này?')">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger mx-1" title="Hủy"><i class="fa-solid fa-xmark"></i></button>
                                             </form>
-                                        }
-                                        <form asp-action="HuyDon" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Hủy lịch đặt này?')">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger mx-1" title="Hủy">
-                                                <i class="fa-solid fa-xmark"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
             </div>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalThu70" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-qrcode me-2"></i>Thu Tiền Sân Còn Lại (70%)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="mb-2">Khách hàng quét mã để thanh toán phần tiền còn lại:</p>
+
+                <h3 class="text-danger fw-bold mb-3" id="soTienConLai">0 đ</h3>
+
+                <div class="bg-light p-3 rounded mb-3 border">
+                    <img id="qrImage70" src="" alt="QR" class="img-fluid shadow-sm mb-2" style="max-width: 200px;">
+                    <p class="small text-muted mb-0">Nội dung CK: <strong id="modalPaymentContent70"></strong></p>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-secondary px-4 me-2" data-bs-dismiss="modal">Đóng</button>
+
+                <form asp-action="DuyetDon" method="post" id="formDuyetDon70">
+                    <input type="hidden" name="id" id="hiddenDuyetDonId" value="" />
+                    <button type="submit" class="btn btn-success px-4 fw-bold">
+                        <i class="fa-solid fa-check-circle me-1"></i>Đã nhận đủ 70%
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function hienThiQRThu70PhanTram(bookingId, tongTien, tienCoc, ngayDat) {
+            // 1. Tính số tiền 70% còn lại (Tổng - Cọc)
+            let tienConLai = tongTien - tienCoc;
+
+            // Nếu vì lý do gì đó mà tiền còn lại <= 0 thì coi như đã trả đủ, submit luôn
+            if(tienConLai <= 0) {
+                document.getElementById('hiddenDuyetDonId').value = bookingId;
+                document.getElementById('formDuyetDon70').submit();
+                return;
+            }
+
+            // 2. Điền dữ liệu vào Popup
+            document.getElementById('soTienConLai').innerText = tienConLai.toLocaleString('vi-VN') + " đ";
+            document.getElementById('hiddenDuyetDonId').value = bookingId; // Nhét ID vào form ngầm
+
+            // 3. Tạo nội dung chuyển khoản và mã QR
+            let noiDungCK = "ThuNotsan_" + ngayDat;
+            document.getElementById('modalPaymentContent70').innerText = noiDungCK;
+
+            // Ép mã QR hiển thị đúng số tiền 70%
+            document.getElementById('qrImage70').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${noiDungCK}_${tienConLai}`;
+
+            // 4. Bật Popup lên
+            let myModal = new bootstrap.Modal(document.getElementById('modalThu70'));
+            myModal.show();
+        }
+    </script>
+}

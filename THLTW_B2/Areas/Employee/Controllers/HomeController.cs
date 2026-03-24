@@ -7,6 +7,7 @@ using THLTW_B2.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace THLTW_B2.Areas.Employee.Controllers
 {
@@ -27,12 +28,21 @@ namespace THLTW_B2.Areas.Employee.Controllers
         }
 
         // ==========================================
-        // 1. QUẢN LÝ ĐẶT SÂN
+        // 1. QUẢN LÝ ĐẶT SÂN (LÚC CHẠY HOÀN HẢO NHẤT)
         // ==========================================
 
         public async Task<IActionResult> YeuCauDatSan(string tab = "donngay")
         {
             ViewBag.CurrentTab = tab;
+
+            if (tab == "timdoithu")
+            {
+                var matchRequests = await _context.MatchRequests
+                    .OrderByDescending(m => m.CreatedAt)
+                    .ToListAsync();
+                ViewBag.MatchRequests = matchRequests;
+                return View(new List<Booking>());
+            }
 
             var query = _context.Bookings
                 .Include(b => b.User)
@@ -74,21 +84,9 @@ namespace THLTW_B2.Areas.Employee.Controllers
             if (booking != null && booking.Status != "Đã hoàn thành")
             {
                 booking.Status = "Đã hoàn thành";
-
-                var newPayment = new Payment
-                {
-                    InvoiceCode = "HD-" + DateTime.Now.ToString("yyyyMMdd") + "-" + new Random().Next(1000, 9999),
-                    BookingId = booking.Id,
-                    Amount = booking.TotalPrice,
-                    PaymentMethod = "Tiền mặt",
-                    Status = "Thành công",
-                    PaymentDate = DateTime.Now,
-                    Note = "Thu tiền sân " + booking.TimeSlot
-                };
-
-                _context.Payments.Add(newPayment);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "Đơn đã HOÀN THÀNH. Hệ thống đã cộng tiền vào Doanh thu!";
+
+                TempData["Success"] = "Đơn đã HOÀN THÀNH.";
             }
             return RedirectToAction(nameof(YeuCauDatSan));
         }
@@ -106,9 +104,7 @@ namespace THLTW_B2.Areas.Employee.Controllers
             }
             return RedirectToAction(nameof(YeuCauDatSan));
         }
-        [HttpPost]
-        [HttpPost]
-     
+
         // ==========================================
         // 2. CHỨC NĂNG TẠO MỚI LỊCH ĐẶT SÂN
         // ==========================================
@@ -116,19 +112,118 @@ namespace THLTW_B2.Areas.Employee.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            // BẢN VÁ 1: Thêm .ToList() để nạp dữ liệu chắc chắn 100% không bị Null
-            ViewBag.UserId = new SelectList(_context.Users.ToList(), "Id", "UserName");
-            ViewBag.SoccerFieldId = new SelectList(_context.SoccerFields.ToList(), "Id", "Name");
-
-            // BẢN VÁ 2: Phải truyền "new Booking()" sang để View có cái mà bám vào
+            ViewBag.ListSan = _context.SoccerFields.ToList();
+            ViewBag.ListKhach = _context.Users.ToList();
             return View(new Booking());
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(Booking booking)
+        {
+            booking.Status = "Đã cọc";
+            booking.DepositAmount = booking.TotalPrice * (decimal)0.3; // Tự tính cọc 30%
+            booking.CreatedAt = DateTime.Now;
+
+            ModelState.Remove("SoccerField");
+            ModelState.Remove("User");
+
+            if (booking.UserId == "GUEST")
+            {
+                var guestUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "khachtudo");
+                if (guestUser == null)
+                {
+                    guestUser = new ApplicationUser
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        UserName = "khachtudo",
+                        Email = "khachtudo@hethong.com",
+                        FullName = "Khách Tự Do (Tại Quầy)",
+                        PhoneNumber = "0000000000",
+                        EmailConfirmed = true
+                    };
+                    _context.Users.Add(guestUser);
+                    await _context.SaveChangesAsync();
+                }
+                booking.UserId = guestUser.Id;
+            }
+
+            if (ModelState.IsValid)
+            {
+                bool isBooked = await _context.Bookings.AnyAsync(b =>
+                    b.SoccerFieldId == booking.SoccerFieldId &&
+                    b.BookingDate.Date == booking.BookingDate.Date &&
+                    b.TimeSlot == booking.TimeSlot &&
+                    b.Status != "Đã hủy");
+
+                if (isBooked)
+                {
+                    ModelState.AddModelError("", "LỖI: Sân này ở khung giờ này đã có người đặt trên mạng rồi!");
+                    ViewBag.ListSan = _context.SoccerFields.ToList();
+                    ViewBag.ListKhach = _context.Users.ToList();
+                    return View(booking);
+                }
+
+                var pitch = await _context.SoccerFields.FindAsync(booking.SoccerFieldId);
+                var chotKeo = await _context.MatchRequests.AnyAsync(m =>
+                    m.PitchName == pitch.Name &&
+                    m.MatchDate.Date == booking.BookingDate.Date &&
+                    m.TimeSlot == booking.TimeSlot &&
+                    m.Status != "Đang chờ đối thủ" && m.Status != "Hết hạn (Chờ hoàn cọc)");
+
+                if (chotKeo)
+                {
+                    ModelState.AddModelError("", "LỖI: Sân này đã có đội cáp kèo chốt đá rồi!");
+                    ViewBag.ListSan = _context.SoccerFields.ToList();
+                    ViewBag.ListKhach = _context.Users.ToList();
+                    return View(booking);
+                }
+
+                var pendingMatches = await _context.MatchRequests.Where(m =>
+                    m.MatchDate.Date == booking.BookingDate.Date &&
+                    m.TimeSlot == booking.TimeSlot &&
+                    m.OpponentName == null &&
+                    m.PitchName == pitch.Name).ToListAsync();
+
+                foreach (var match in pendingMatches)
+                {
+                    match.Status = "Đã hủy (Chờ hoàn cọc)";
+                    match.Note = $"Hệ thống tự hủy lúc {DateTime.Now.ToString("HH:mm")}: Nhân viên quán đã chốt cho khách lẻ.";
+                }
+
+                try
+                {
+                    _context.Bookings.Add(booking);
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] = "Đã chốt sân cho khách!";
+                    return RedirectToAction(nameof(YeuCauDatSan));
+                }
+                catch (Exception ex)
+                {
+                    string chiTietLoi = ex.Message;
+                    if (ex.InnerException != null) chiTietLoi += " | LỖI: " + ex.InnerException.Message;
+                    ModelState.AddModelError("", "Lỗi khi lưu DB: " + chiTietLoi);
+                }
+            }
+
+            ViewBag.ListSan = _context.SoccerFields.ToList();
+            ViewBag.ListKhach = _context.Users.ToList();
+            return View(booking);
+        }
+
         // ==========================================
-        // KHU VỰC XỬ LÝ API CHO TRANG BÁN HÀNG
+        // 3. CHỨC NĂNG BÁN HÀNG DỊCH VỤ TẠI QUẦY (TRẢ VỀ NGUYÊN BẢN CHỈ TRỪ KHO)
         // ==========================================
 
-        // 1. Tạo một Class nhỏ để hứng dữ liệu từ JavaScript gửi lên
+        [HttpGet]
+        public async Task<IActionResult> BanHang()
+        {
+            ViewBag.Categories = await _context.Categories.ToListAsync();
+            var products = await _context.Products.ToListAsync();
+            return View(products);
+        }
+
         public class CartItem
         {
             public int Id { get; set; }
@@ -137,82 +232,76 @@ namespace THLTW_B2.Areas.Employee.Controllers
             public int Quantity { get; set; }
         }
 
-        // 2. Hàm nhận dữ liệu và lưu Database
         [HttpPost]
         public async Task<IActionResult> XuLyThanhToanPOS([FromBody] List<CartItem> cart)
         {
-            if (cart == null || cart.Count == 0)
-            {
-                return Json(new { success = false, message = "Giỏ hàng rỗng!" });
-            }
+            if (cart == null || cart.Count == 0) return Json(new { success = false, message = "Giỏ hàng rỗng!" });
 
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Tính tổng tiền của cả hóa đơn
-                decimal totalAmount = cart.Sum(item => item.Price * item.Quantity);
+                decimal totalAmount = 0;
+                var chiTietMua = new List<string>();
 
-                // Tạo chuỗi ghi chú liệt kê các món đã mua (VD: "2x Nước suối, 1x Bò húc")
-                var chiTietMua = string.Join(", ", cart.Select(c => $"{c.Quantity}x {c.Name}"));
-
-                // Tạo hóa đơn mới lưu vào bảng Payment (dựa theo model Payment của bạn)
-                var newPayment = new Payment
+                // 1. VÒNG LẶP TRỪ TỒN KHO
+                foreach (var item in cart)
                 {
-                    InvoiceCode = "POS-" + DateTime.Now.ToString("yyyyMMddHHmmss"), // Mã HD Bán lẻ
-                    Amount = totalAmount,
-                    PaymentMethod = "Tiền mặt",
-                    Status = "Thành công",
-                    PaymentDate = DateTime.Now,
-                    Note = "Bán lẻ tại quầy: " + chiTietMua
-                };
+                    var product = await _context.Products.FindAsync(item.Id);
+                    if (product == null) return Json(new { success = false, message = "Lỗi sản phẩm." });
+                    if (product.StockQuantity < item.Quantity) return Json(new { success = false, message = "Không đủ tồn kho." });
 
-                _context.Payments.Add(newPayment);
+                    product.StockQuantity -= item.Quantity; // Trừ kho
+                    totalAmount += item.Price * item.Quantity; // Cộng dồn tiền
+                    chiTietMua.Add($"{item.Quantity}x {item.Name}");
+                }
+
+                // =========================================================
+                // 2. TUYỆT CHIÊU: TẠO "ĐƠN ĐẶT SÂN ẢO" ĐỂ ADMIN CỘNG TIỀN NƯỚC
+                // =========================================================
+
+                // Lấy đại ID của Sân bóng đầu tiên trong hệ thống để SQL không chửi lỗi "Thiếu Sân"
+                var defaultField = await _context.SoccerFields.FirstOrDefaultAsync();
+                int fieldId = defaultField != null ? defaultField.FieldId : 0;
+
+                if (fieldId > 0)
+                {
+                    // Lấy hoặc tạo tài khoản "Khách Tự Do"
+                    var guestUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "khachtudo");
+                    if (guestUser == null)
+                    {
+                        guestUser = new ApplicationUser { Id = Guid.NewGuid().ToString(), UserName = "khachtudo", Email = "khachtudo@hethong.com", FullName = "Khách Tự Do (Tại Quầy)", PhoneNumber = "0000000000", EmailConfirmed = true };
+                        _context.Users.Add(guestUser);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // Nhét tiền bán nước vào vỏ bọc "Đơn đặt sân"
+                    var fakeBooking = new Booking
+                    {
+                        UserId = guestUser.Id,
+                        SoccerFieldId = fieldId,
+                        BookingDate = DateTime.Now.Date,
+                        TimeSlot = "POS " + DateTime.Now.ToString("HH:mm"), // Ghi nhận đây là đơn POS thay vì giờ đá
+                        TotalPrice = totalAmount,
+                        DepositAmount = totalAmount, // Nộp đủ 100% tiền nước
+                        Status = "Đã hoàn thành", // Khớp mật khẩu để Admin hút tiền lên Báo cáo
+                        CreatedAt = DateTime.Now,
+                        Note = "Bán lẻ tại quầy: " + string.Join(", ", chiTietMua)
+                    };
+
+                    _context.Bookings.Add(fakeBooking);
+                }
+
+                // 3. LƯU TẤT CẢ VÀO DATABASE
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
-                // Trả về thông báo thành công cho JavaScript
                 return Json(new { success = true });
             }
             catch (Exception ex)
             {
-                // Nếu có lỗi CSDL thì báo về cho giao diện
-                return Json(new { success = false, message = ex.Message });
+                await transaction.RollbackAsync();
+                return Json(new { success = false, message = "Lỗi hệ thống: " + ex.InnerException?.Message ?? ex.Message });
             }
         }
-        // ==========================================
-        // 3. CHỨC NĂNG BÁN HÀNG DỊCH VỤ TẠI QUẦY (POS)
-        // ==========================================
-
-
-        [HttpGet]
-        public async Task<IActionResult> BanHang() // <--- SỬA LẠI DÒNG NÀY LÀ XONG
-        {
-            var danhSachSanPham = await _context.Products.ToListAsync();
-            return View(danhSachSanPham);
-        }
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Booking booking)
-        {
-            ModelState.Remove("User");
-            ModelState.Remove("SoccerField");
-
-            if (ModelState.IsValid)
-            {
-                booking.CreatedAt = DateTime.Now;
-                booking.Status = "Đã xác nhận";
-
-                _context.Bookings.Add(booking);
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = "Đã tạo thành công lịch đặt sân mới!";
-                return RedirectToAction(nameof(YeuCauDatSan));
-            }
-
-            // BẢN VÁ 3: Đổi "FullName" thành "UserName" cho đồng bộ với hàm GET bên trên
-            ViewBag.UserId = new SelectList(_context.Users.ToList(), "Id", "UserName", booking.UserId);
-            ViewBag.SoccerFieldId = new SelectList(_context.SoccerFields.ToList(), "Id", "Name", booking.SoccerFieldId);
-
-            return View(booking);
-        }
-
     }
 }
