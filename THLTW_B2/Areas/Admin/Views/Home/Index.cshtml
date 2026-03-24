@@ -49,7 +49,7 @@
             <div class="stat-card" style="border-left-color: #198754; cursor: pointer;">
                 <div>
                     <p>Doanh Thu Hôm Nay</p>
-                    <h3 class="text-success">@Model.TodayRevenue.ToString("N0")₫</h3>
+                    
                     <small class="text-muted mt-1 d-block"><i class="bi bi-arrow-right-circle"></i> Xem báo cáo chi tiết</small>
                 </div>
                 <i class="bi bi-cash-coin stat-icon text-success"></i>
@@ -57,25 +57,7 @@
         </a>
     </div>
 
-    <div class="col-md-3">
-        <div class="stat-card" style="border-left-color: #0d6efd;">
-            <div>
-                <p>Lượt Đặt Mới</p>
-                <h3>@Model.NewBookings</h3>
-            </div>
-            <i class="bi bi-calendar-plus stat-icon text-primary"></i>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="stat-card" style="border-left-color: #ffc107;">
-            <div>
-                <p>Kèo Đang Chờ Ghép</p>
-                <h3>@Model.PendingMatches</h3>
-            </div>
-            <i class="bi bi-people stat-icon text-warning"></i>
-        </div>
-    </div>
+    
 
     <div class="col-md-3">
         <div class="stat-card" style="border-left-color: #dc3545;">
