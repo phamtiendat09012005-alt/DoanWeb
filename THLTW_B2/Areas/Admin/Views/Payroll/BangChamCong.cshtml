@@ -5,7 +5,9 @@
     int thang = ViewBag.Thang;
     int nam = ViewBag.Nam;
     int soNgay = ViewBag.SoNgayTrongThang;
-    var nhanViens = ViewBag.DanhSachNhanVien as List<THLTW_B2.Models.ApplicationUser>;
+
+    // Lấy danh sách đã được lọc SẠCH từ Controller
+    var nhanViens = ViewBag.DanhSachNhanVien as List<THLTW_B2.Models.ApplicationUser> ?? new List<THLTW_B2.Models.ApplicationUser>();
 }
 
 <style>
@@ -14,7 +16,7 @@
         position: sticky;
         left: 0;
         background-color: #212529 !important;
-        color: #0d6efd !important; /* ĐÃ THÊM !important ĐỂ ÉP CHỮ MÀU XANH */
+        color: #0d6efd !important;
         z-index: 2;
         min-width: 180px;
         box-shadow: 2px 0 5px rgba(0,0,0,0.1);
@@ -68,14 +70,7 @@
             <select name="thang" class="form-select form-select-sm">
                 @for (int i = 1; i <= 12; i++)
                 {
-                    if (i == thang)
-                    {
-                        <option value="@i" selected>Tháng @i</option>
-                    }
-                    else
-                    {
-                        <option value="@i">Tháng @i</option>
-                    }
+                    <option value="@i" selected="@(i == thang)">Tháng @i</option>
                 }
             </select>
             <select name="nam" class="form-select form-select-sm">
@@ -100,35 +95,44 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var nv in nhanViens)
+                        @if (nhanViens.Any())
+                        {
+                            @foreach (var nv in nhanViens)
+                            {
+                                <tr>
+                                    <td class="sticky-col fw-bold text-start ps-3 align-middle">@(nv.FullName ?? nv.UserName)</td>
+
+                                    @for (int i = 1; i <= soNgay; i++)
+                                    {
+                                        var ca = Model.FirstOrDefault(s => s.UserId == nv.Id && s.WorkDate.Day == i);
+
+                                        string textCa = ""; string classCa = "";
+                                        if (ca != null)
+                                        {
+                                            if (ca.ShiftName.Contains("Sáng")) { textCa = "S"; classCa = "ca-S"; }
+                                            else if (ca.ShiftName.Contains("Chiều")) { textCa = "C"; classCa = "ca-C"; }
+                                            else if (ca.ShiftName.Contains("Tối")) { textCa = "T"; classCa = "ca-T"; }
+                                            else { textCa = "X"; classCa = "bg-secondary text-white rounded px-1"; }
+                                        }
+
+                                        <td class="cell-shift"
+                                            onclick="openShiftModal('@nv.Id', '@(nv.FullName ?? nv.UserName)', @i, '@(ca?.ShiftName ?? "")', @(ca?.ShiftWage ?? 70000))"
+                                            title="Click để xếp ca">
+                                            @if (!string.IsNullOrEmpty(textCa))
+                                            {
+                                                <div class="@classCa">@textCa</div>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        }
+                        else
                         {
                             <tr>
-                                <td class="sticky-col fw-bold text-start ps-3 align-middle">@(nv.FullName ?? nv.UserName)</td>
-
-                                @for (int i = 1; i <= soNgay; i++)
-                                {
-                                    // Tìm xem ngày này nhân viên có ca không
-                                    var ca = Model.FirstOrDefault(s => s.UserId == nv.Id && s.WorkDate.Day == i);
-
-                                    // Hiển thị viết tắt: Sáng (S), Chiều (C), Tối (T)
-                                    string textCa = ""; string classCa = "";
-                                    if (ca != null)
-                                    {
-                                        if (ca.ShiftName.Contains("Sáng")) { textCa = "S"; classCa = "ca-S"; }
-                                        else if (ca.ShiftName.Contains("Chiều")) { textCa = "C"; classCa = "ca-C"; }
-                                        else if (ca.ShiftName.Contains("Tối")) { textCa = "T"; classCa = "ca-T"; }
-                                        else { textCa = "X"; classCa = "bg-secondary text-white rounded px-1"; }
-                                    }
-
-                                    <td class="cell-shift"
-                                        onclick="openShiftModal('@nv.Id', '@(nv.FullName ?? nv.UserName)', @i, '@(ca?.ShiftName ?? "")', @(ca?.ShiftWage ?? 70000))"
-                                        title="Click để xếp ca">
-                                        @if (!string.IsNullOrEmpty(textCa))
-                                        {
-                                            <div class="@classCa">@textCa</div>
-                                        }
-                                    </td>
-                                }
+                                <td colspan="@(soNgay + 1)" class="text-center py-4 text-muted">
+                                    Không có nhân viên hoặc quản trị viên nào trong hệ thống.
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -192,7 +196,6 @@
             const sName = document.getElementById('editShiftName').value;
             const sWage = document.getElementById('editShiftWage').value;
 
-            // Gọi AJAX lưu lên Server
             const formData = new FormData();
             formData.append('userId', uid);
             formData.append('day', d);
@@ -207,7 +210,7 @@
                     body: formData
                 });
                 if(response.ok) {
-                    location.reload(); // Load lại trang để hiện ca mới
+                    location.reload();
                 } else {
                     alert("Có lỗi xảy ra khi lưu ca!");
                 }

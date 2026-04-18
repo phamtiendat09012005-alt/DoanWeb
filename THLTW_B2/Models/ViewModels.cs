@@ -38,4 +38,5 @@
         public bool IsMatch { get; set; } // Phân loại để hiển thị icon
         public decimal TotalPrice { get; set; }
     }
+   
 }

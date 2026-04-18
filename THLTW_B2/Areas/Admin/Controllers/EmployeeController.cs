@@ -1,11 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using THLTW_B2.Models;
 
 namespace THLTW_B2.Areas.Admin.Controllers
 {
+    // Đảm bảo class CreateEmployeeViewModel có tồn tại, nếu bạn để ở Models thì đổi namespace tương ứng
+   
+
     [Area("Admin")]
     [Authorize(Roles = "Admin")]
     public class EmployeeController : Controller
@@ -20,7 +24,7 @@ namespace THLTW_B2.Areas.Admin.Controllers
         }
 
         // ==========================================
-        // 1. TRANG DANH SÁCH: Đã mở bộ lọc để "cứu" dữ liệu
+        // 1. TRANG DANH SÁCH
         // ==========================================
         [HttpGet]
         public async Task<IActionResult> Index()
@@ -32,7 +36,6 @@ namespace THLTW_B2.Areas.Admin.Controllers
             {
                 var roles = await _userManager.GetRolesAsync(user);
 
-                // ĐÃ BỎ ĐIỀU KIỆN IF Ở ĐÂY ĐỂ BẠN NHÌN THẤY TẤT CẢ TÀI KHOẢN!
                 viewModelList.Add(new UserListViewModel
                 {
                     Id = user.Id,
@@ -45,35 +48,49 @@ namespace THLTW_B2.Areas.Admin.Controllers
         }
 
         // ==========================================
-        // 2. TẠO TÀI KHOẢN (Giữ nguyên, code bạn đã chuẩn)
+        // 2. TẠO TÀI KHOẢN (Đã fix đồng bộ View - Controller)
         // ==========================================
         [HttpGet]
-        public IActionResult Create() => View();
+        public IActionResult Create()
+        {
+            // Lần đầu vào trang: Nạp danh sách quyền cho Dropdown
+            ViewBag.RoleList = new SelectList(_roleManager.Roles.ToList(), "Name", "Name");
+            return View();
+        }
 
         [HttpPost]
-        public async Task<IActionResult> Create(string fullName, string email, string password)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreateEmployeeViewModel model)
         {
-            if (string.IsNullOrEmpty(fullName) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            if (ModelState.IsValid)
             {
-                ViewBag.Error = "Vui lòng nhập đầy đủ thông tin!";
-                return View();
+                var user = new ApplicationUser { UserName = model.Email, Email = model.Email, FullName = model.FullName, EmailConfirmed = true };
+                var result = await _userManager.CreateAsync(user, model.Password);
+
+                if (result.Succeeded)
+                {
+                    // Lấy quyền từ giao diện người dùng chọn (nếu không chọn thì mặc định là Employee)
+                    string roleToAssign = string.IsNullOrEmpty(model.SelectedRole) ? "Employee" : model.SelectedRole;
+
+                    if (!await _roleManager.RoleExistsAsync(roleToAssign))
+                        await _roleManager.CreateAsync(new IdentityRole(roleToAssign));
+
+                    // Add đúng cái quyền vừa chọn
+                    await _userManager.AddToRoleAsync(user, roleToAssign);
+
+                    TempData["SuccessMessage"] = $"Đã tạo thành công tài khoản cho: {model.FullName}";
+                    return RedirectToAction("Index");
+                }
+
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
             }
 
-            var user = new ApplicationUser { UserName = email, Email = email, FullName = fullName, EmailConfirmed = true };
-            var result = await _userManager.CreateAsync(user, password);
-
-            if (result.Succeeded)
-            {
-                if (!await _roleManager.RoleExistsAsync("Employee"))
-                    await _roleManager.CreateAsync(new IdentityRole("Employee"));
-
-                await _userManager.AddToRoleAsync(user, "Employee");
-                TempData["SuccessMessage"] = $"Đã tạo thành công tài khoản cho: {fullName}";
-                return RedirectToAction("Index");
-            }
-
-            foreach (var error in result.Errors) ModelState.AddModelError("", error.Description);
-            return View();
+            // BẢN VÁ LỖI: Nạp lại ViewBag nếu form bị lỗi nhập liệu
+            ViewBag.RoleList = new SelectList(_roleManager.Roles.ToList(), "Name", "Name");
+            return View(model);
         }
 
         // ==========================================
@@ -97,7 +114,7 @@ namespace THLTW_B2.Areas.Admin.Controllers
         }
 
         // ==========================================
-        // 4. POST: LƯU QUYỀN (Đã fix lỗi sập trang)
+        // 4. POST: LƯU QUYỀN
         // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -112,13 +129,11 @@ namespace THLTW_B2.Areas.Admin.Controllers
 
                 if (!currentRoles.Contains(model.RoleName))
                 {
-                    // FIX LỖI: Chỉ xóa nếu user đang có quyền, tránh lỗi sập Identity
                     if (currentRoles.Any())
                     {
                         await _userManager.RemoveFromRolesAsync(user, currentRoles);
                     }
 
-                    // Thêm quyền mới
                     await _userManager.AddToRoleAsync(user, model.RoleName);
                 }
 
@@ -127,6 +142,10 @@ namespace THLTW_B2.Areas.Admin.Controllers
             }
             return View(model);
         }
+
+        // ==========================================
+        // 5. POST: XÓA TÀI KHOẢN
+        // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(string id)
@@ -144,7 +163,6 @@ namespace THLTW_B2.Areas.Admin.Controllers
                 return RedirectToAction("Index");
             }
 
-            // LỚP GIÁP BẢO VỆ: Ngăn Admin tự xóa chính mình (tự sát)
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser != null && currentUser.Id == user.Id)
             {
@@ -152,7 +170,6 @@ namespace THLTW_B2.Areas.Admin.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Thực thi lệnh xóa khỏi Database
             var result = await _userManager.DeleteAsync(user);
 
             if (result.Succeeded)

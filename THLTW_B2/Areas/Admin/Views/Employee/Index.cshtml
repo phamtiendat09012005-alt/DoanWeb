@@ -1,6 +1,13 @@
 ﻿@model IEnumerable<THLTW_B2.Models.UserListViewModel>
 @{
     ViewData["Title"] = "Quản lý nhân viên";
+
+    // LOGIC LỌC TẠI VIEW:
+    // Chỉ lấy những user có danh sách Roles (không null/rỗng)
+    // VÀ trong danh sách Roles đó phải chứa "Admin" HOẶC "Employee"
+    var employeeList = Model.Where(u => u.Roles != null &&
+                                        (u.Roles.Contains("Admin") || u.Roles.Contains("Employee")))
+                            .ToList();
 }
 
 <div class="container-fluid py-3">
@@ -37,53 +44,62 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var user in Model)
+                    @if (employeeList.Any())
                     {
-                        <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-info bg-opacity-10 text-info rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
-                                        <i class="bi bi-person-badge fs-5"></i>
+                        @foreach (var user in employeeList)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-info bg-opacity-10 text-info rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-person-badge fs-5"></i>
+                                        </div>
+                                        <span class="fw-bold">@user.UserName</span>
                                     </div>
-                                    <span class="fw-bold">@user.UserName</span>
-                                </div>
-                            </td>
-                            <td>@user.Email</td>
-                            <td>
-                                @if (user.Roles != null && user.Roles.Any())
-                                {
+                                </td>
+                                <td>@user.Email</td>
+                                <td>
                                     @foreach (var role in user.Roles)
                                     {
                                         var badgeClass = role switch
                                         {
                                             "Admin" => "bg-danger",
                                             "Employee" => "bg-success",
-                                            _ => "bg-secondary"
+                                            _ => "bg-secondary" // Các quyền phụ khác nếu có
                                         };
                                         <span class="badge @badgeClass rounded-pill px-3 py-2 me-1">
                                             <i class="bi bi-shield-check me-1"></i> @role
                                         </span>
                                     }
-                                }
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2">
-                                    <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Hoạt động
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group">
-                                    <a asp-controller="Employee" asp-action="EditRoles" asp-route-userId="@user.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2" title="Chỉnh sửa quyền">
-                                        <i class="bi bi-shield-lock me-1"></i> Quyền
-                                    </a>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2">
+                                        <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Hoạt động
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a asp-controller="Employee" asp-action="EditRoles" asp-route-userId="@user.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2" title="Chỉnh sửa quyền">
+                                            <i class="bi bi-shield-lock me-1"></i> Quyền
+                                        </a>
 
-                                    <form asp-controller="Employee" asp-action="Delete" asp-route-id="@user.Id" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-light rounded-circle text-danger shadow-sm"
-                                                onclick="return confirm('Bạn có chắc chắn muốn thu hồi tài khoản của @user.UserName?')" title="Xóa tài khoản">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
+                                        <form asp-controller="Employee" asp-action="Delete" asp-route-id="@user.Id" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-light rounded-circle text-danger shadow-sm"
+                                                    onclick="return confirm('Bạn có chắc chắn muốn thu hồi tài khoản của @user.UserName?')" title="Xóa tài khoản">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-person-x fs-1 d-block mb-2"></i>
+                                Không tìm thấy tài khoản Quản trị viên hoặc Nhân viên nào.
                             </td>
                         </tr>
                     }

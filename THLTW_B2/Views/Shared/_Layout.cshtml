@@ -13,6 +13,8 @@
 
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" />
     <link href="https://fonts.googleapis.com/css?family=Poppins:400,700|Raleway:400,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
     <link rel="stylesheet" type="text/css" href="/Temp/css/bootstrap.css" />
     <link href="/Temp/css/style.css" rel="stylesheet" />
     <link href="/Temp/css/responsive.css" rel="stylesheet" />
@@ -21,25 +23,18 @@
         html {
             scroll-behavior: smooth;
         }
-        .heading_container h2 span,
-        .slider_section .detail-box h1 span {
+
+        .heading_container h2 span, .slider_section .detail-box h1 span {
             color: #007bff !important;
         }
 
-        .btn-warning,
-        .slider_section .detail-box a,
-        .service_section .btn-box a,
-        .started_section .btn-box a,
-        .agency_section .detail-box a {
+        .btn-warning, .slider_section .detail-box a, .service_section .btn-box a, .started_section .btn-box a, .agency_section .detail-box a {
             background-color: #007bff !important;
             border: 1px solid #007bff !important;
             color: #ffffff !important;
         }
 
-            .slider_section .detail-box a:hover,
-            .service_section .btn-box a:hover,
-            .started_section .btn-box a:hover,
-            .agency_section .detail-box a:hover {
+            .slider_section .detail-box a:hover, .service_section .btn-box a:hover, .started_section .btn-box a:hover, .agency_section .detail-box a:hover {
                 background-color: transparent !important;
                 color: #007bff !important;
             }
@@ -57,20 +52,53 @@
         }
 
         .carousel-indicators li {
-            color: #adb5bd !important; /* Màu xám cho số bình thường */
+            color: #adb5bd !important;
             font-weight: 800;
             font-size: 1.2rem;
             transition: all 0.3s ease;
         }
 
             .carousel-indicators li.active {
-                color: #007bff !important; /* Màu xanh dương đồng bộ với giao diện */
+                color: #007bff !important;
                 transform: scale(1.3);
                 opacity: 1 !important;
+            }
+
+        /* CSS Riêng cho nút VIP trên Menu */
+        .nav-vip-btn {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000 !important;
+            font-weight: bold;
+            border-radius: 20px;
+            padding: 5px 15px !important;
+            box-shadow: 0 4px 6px rgba(255, 215, 0, 0.3);
+            transition: 0.3s;
+        }
+
+            .nav-vip-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(255, 215, 0, 0.5);
+                color: #fff !important;
             }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
+
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<THLTW_B2.Models.ApplicationUser> UserManager
+@inject SignInManager<THLTW_B2.Models.ApplicationUser> SignInManager
+
+@{
+        bool isVip = false;
+        if (SignInManager.IsSignedIn(User))
+        {
+                var currentUser = await UserManager.GetUserAsync(User);
+                if (currentUser != null)
+                {
+                        isVip = currentUser.IsVip && currentUser.VipExpirationDate > DateTime.Now;
+                }
+        }
+}
 
 <body>
     <header class="header_section bg-light shadow-sm">
@@ -85,23 +113,34 @@
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <div class="d-flex ml-auto flex-column flex-lg-row align-items-center">
-                        <ul class="navbar-nav">
-                            <li class="nav-item">
-                                <a class="nav-link" href="/">Trang Chủ</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/DatSan">Đặt Sân</a>
-                            </li>
-                            <li class="nav-item ">
-                                <a class="nav-link" asp-controller="TimDoiThu" asp-action="Index">TÌM ĐỐI THỦ</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/CuaHang">CỬA HÀNG</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#footer-contact">Liên Hệ</a>
-                            </li>
+                        <ul class="navbar-nav align-items-center">
+                            <li class="nav-item"><a class="nav-link" href="/">Trang Chủ</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/DatSan">Đặt Sân</a></li>
+                            <li class="nav-item"><a class="nav-link" asp-controller="TimDoiThu" asp-action="Index">TÌM ĐỐI THỦ</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/CuaHang">CỬA HÀNG</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#footer-contact">Liên Hệ</a></li>
+
+                            @if (SignInManager.IsSignedIn(User))
+                            {
+                                if (!isVip)
+                                {
+                                    <li class="nav-item mx-2">
+                                        <a class="nav-link nav-vip-btn" asp-controller="Vip" asp-action="Index">
+                                            <i class="fa-solid fa-crown me-1"></i> Mua VIP
+                                        </a>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="nav-item mx-2" title="Đang sử dụng gói VIP">
+                                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem;">
+                                            <i class="fa-solid fa-crown fa-bounce me-1"></i> Tài Khoản VIP
+                                        </span>
+                                    </li>
+                                }
+                            }
                         </ul>
+
                         <partial name="_LoginPartial" />
                     </div>
                 </div>

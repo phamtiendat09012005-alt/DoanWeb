@@ -1,66 +1,95 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using THLTW_B2.DataAccess;
-using THLTW_B2.Models; // Thay THLTW_B2 bằng tên project của bạn
+using THLTW_B2.Models;
+using System.Linq;
+using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
 namespace THLTW_B2.Areas.Employee.Controllers
 {
     [Area("Employee")]
     public class LichSanController : Controller
     {
-        private readonly ApplicationDbContext _context; // Thay YourDbContext bằng tên DbContext của bạn
+        private readonly ApplicationDbContext _context;
 
         public LichSanController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // HÀM HIỂN THỊ GIAO DIỆN LỊCH
         public IActionResult Index()
         {
-            // BẮT BUỘC DÙNG ĐƯỜNG DẪN NÀY VÌ BẠN ĐẶT FILE Ở THƯ MỤC HOME
             return View("~/Areas/Employee/Views/Home/LichSan.cshtml");
         }
 
-        // HÀM TRẢ VỀ DỮ LIỆU JSON CHO FULLCALENDAR
         [HttpGet]
         public async Task<JsonResult> GetCalendarEvents()
         {
-            // 1. Lấy Lịch đặt sân
+            var eventList = new List<object>();
+
+            // 1. XỬ LÝ LỊCH ĐẶT SÂN
             var bookings = await _context.Bookings
                 .Include(b => b.SoccerField)
+                .Include(b => b.User) // Cần Include User để lấy tên
                 .Where(b => b.Status != "Đã hủy")
                 .ToListAsync();
 
-            var bookingList = bookings.Select(b => {
+            foreach (var b in bookings)
+            {
+                if (string.IsNullOrEmpty(b.TimeSlot) || !b.TimeSlot.Contains("-")) continue;
+
                 var times = b.TimeSlot.Split('-');
-                return new
-                {
-                    id = "b_" + b.Id,
-                    title = (b.SoccerField?.Name ?? "Sân") + " (Đã đặt)",
-                    start = b.BookingDate.ToString("yyyy-MM-dd") + "T" + times[0].Trim() + ":00",
-                    end = b.BookingDate.ToString("yyyy-MM-dd") + "T" + times[1].Trim() + ":00",
-                    color = "#d9534f", // Đỏ đô
-                    extendedProps = new { info = "Khách: " + (b.User?.UserName ?? "Khách lẻ") }
-                };
-            }).ToList();
+                string startTime = times[0].Trim();
 
-            // 2. Lấy Kèo tìm đối thủ
+                // Gọt sạch chữ (nếu có), chỉ lấy 5 ký tự đầu "HH:mm"
+                string endTimeRaw = times[1].Trim();
+                string endTime = endTimeRaw.Length > 5 ? endTimeRaw.Substring(0, 5).Trim() : endTimeRaw;
+
+                try
+                {
+                    eventList.Add(new
+                    {
+                        id = "b_" + b.Id,
+                        title = (b.SoccerField?.Name ?? "Sân") + " (Đã đặt)",
+                        start = b.BookingDate.ToString("yyyy-MM-dd") + "T" + startTime + ":00",
+                        end = b.BookingDate.ToString("yyyy-MM-dd") + "T" + endTime + ":00",
+                        color = "#d9534f", // Đỏ đô
+                        extendedProps = new { info = "Khách: " + (b.User?.FullName ?? b.User?.UserName ?? "Khách lẻ") }
+                    });
+                }
+                catch { /* Bỏ qua nếu có lỗi format ở 1 đơn lẻ */ }
+            }
+
+            // 2. XỬ LÝ KÈO TÌM ĐỐI THỦ
             var matches = await _context.MatchRequests.ToListAsync();
-            var matchList = matches.Select(m => {
-                var times = m.TimeSlot.Split('-');
-                return new
-                {
-                    id = "m_" + m.Id,
-                    title = "🔥 Kèo: " + (m.PitchName ?? "Sân"),
-                    start = m.MatchDate.ToString("yyyy-MM-dd") + "T" + times[0].Trim() + ":00",
-                    end = m.MatchDate.ToString("yyyy-MM-dd") + "T" + times[1].Trim() + ":00",
-                    color = "#f0ad4e", // Cam
-                    extendedProps = new { info = "Đội: " + m.TeamName }
-                };
-            }).ToList();
+            foreach (var m in matches)
+            {
+                if (string.IsNullOrEmpty(m.TimeSlot) || !m.TimeSlot.Contains("-")) continue;
 
-            return Json(bookingList.Concat(matchList).ToList());
+                var times = m.TimeSlot.Split('-');
+                string startTime = times[0].Trim();
+
+                string endTimeRaw = times[1].Trim();
+                string endTime = endTimeRaw.Length > 5 ? endTimeRaw.Substring(0, 5).Trim() : endTimeRaw;
+
+                try
+                {
+                    eventList.Add(new
+                    {
+                        id = "m_" + m.Id,
+                        title = "🔥 Kèo: " + (m.PitchName ?? "Sân"),
+                        start = m.MatchDate.ToString("yyyy-MM-dd") + "T" + startTime + ":00",
+                        end = m.MatchDate.ToString("yyyy-MM-dd") + "T" + endTime + ":00",
+                        color = "#f0ad4e", // Cam
+                        extendedProps = new { info = "Đội: " + m.TeamName }
+                    });
+                }
+                catch { }
+            }
+
+            return Json(eventList);
         }
     }
 }

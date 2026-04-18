@@ -20,6 +20,10 @@
             }
 
             <form asp-action="Create" method="post" id="formDatSan">
+
+                <input type="hidden" asp-for="DepositAmount" id="hiddenDepositAmount" />
+                <input type="hidden" asp-for="Status" value="Đã cọc" />
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Chọn Sân <span class="text-danger">*</span></label>
@@ -73,7 +77,7 @@
 
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Tổng tiền (VNĐ)</label>
-                        <input asp-for="TotalPrice" type="number" class="form-control bg-light fw-bold text-danger" readonly />
+                        <input asp-for="TotalPrice" type="number" class="form-control bg-light fw-bold text-danger" />
                     </div>
 
                     <div class="col-md-12 mb-3">
@@ -130,12 +134,17 @@
             const tongTienInput = document.getElementById("TotalPrice");
             const formObj = document.getElementById("formDatSan");
 
+            // Khởi tạo Modal 1 lần duy nhất
+            const paymentModalElement = document.getElementById('paymentModal');
+            const paymentModal = bootstrap.Modal.getOrCreateInstance(paymentModalElement);
+
+            // FIX CỰC KỲ QUAN TRỌNG: (int)san.PricePerHour để chống lỗi dấu phẩy thập phân trong JS
             const giaSanList = {
                 @if (ViewBag.ListSan != null)
                 {
                         foreach (var san in ViewBag.ListSan)
                         {
-                                <text>"@san.FieldId": @san.PricePerHour,</text>
+                                <text>"@san.FieldId": @((int)san.PricePerHour),</text>
                         }
                 }
             };
@@ -156,7 +165,8 @@
 
                     tongTienInput.value = tongTien;
                 } else {
-                    tongTienInput.value = 0;
+                    // Nếu khách chưa chọn đủ Sân hoặc Giờ, để trống (không ép bằng 0 nữa)
+                    tongTienInput.value = '';
                 }
             }
 
@@ -168,26 +178,26 @@
 
                 let tongTien = tongTienInput.value;
                 if(tongTien <= 0 || !sanSelect.value || !gioSelect.value) {
-                    alert("Vui lòng chọn đủ Sân và Giờ trước khi thanh toán!");
+                    alert("Vui lòng chọn đủ Sân, Giờ và nhập Tổng tiền trước khi thanh toán!");
                     return;
                 }
 
-                // ==========================================
-                // LOGIC MỚI: TÍNH CỌC 30%
-                // ==========================================
+                // Tính cọc 30% dựa trên con số ở ô input (Dù là tự tính hay gõ tay)
                 let tienCoc = Math.round(tongTien * 0.3);
 
-                // Cập nhật số TIỀN CỌC lên Modal thay vì Tổng tiền
+                // GÁN TIỀN CỌC VÀO TRƯỜNG ẨN ĐỂ GỬI VỀ CONTROLLER
+                document.getElementById("hiddenDepositAmount").value = tienCoc;
+
+                // Cập nhật số liệu hiển thị trên Modal
                 document.getElementById("modalTotalAmount").innerText = parseInt(tienCoc).toLocaleString('vi-VN') + " đ";
 
                 let ngayDat = document.getElementById("BookingDate").value.replace(/-/g, '');
                 let noiDungCK = "ThuCocSan_" + ngayDat;
                 document.getElementById("modalPaymentContent").innerText = noiDungCK;
 
-                // Nhét biến tienCoc (30%) vào mã QR
                 document.getElementById("qrImage").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${noiDungCK}_${tienCoc}`;
 
-                let paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+                // Hiển thị modal
                 paymentModal.show();
             });
         });

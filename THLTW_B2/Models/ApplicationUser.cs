@@ -10,5 +10,7 @@ namespace THLTW_B2.Models
         public string FullName { get; set; }
         public string? OtpCode { get; set; }           // Lưu mã 6 số
         public DateTime? OtpExpiryTime { get; set; }
+        public bool IsVip { get; set; } = false;
+        public DateTime? VipExpirationDate { get; set; }
     }
 }

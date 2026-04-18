@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -15,22 +16,22 @@ namespace THLTW_B2.Areas.Admin.Controllers
     public class PayrollController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public PayrollController(ApplicationDbContext context)
+        public PayrollController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // 1. HIỂN THỊ BẢNG LƯƠNG TẠM TÍNH (Những ca chưa thanh toán)
         public async Task<IActionResult> Index()
         {
-            // Lấy các ca đã đi làm (IsAttended = true) nhưng chưa trả lương (IsPaid = false)
             var unpaidShifts = await _context.EmployeeShifts
                 .Include(s => s.User)
                 .Where(s => s.IsAttended == true && s.IsPaid == false)
                 .ToListAsync();
 
-            // Gom nhóm theo từng nhân viên để tính tổng
             var payrollList = unpaidShifts.GroupBy(s => s.UserId)
                 .Select(g => new
                 {
@@ -40,9 +41,7 @@ namespace THLTW_B2.Areas.Admin.Controllers
                     TotalSalary = g.Sum(s => s.ShiftWage)
                 }).ToList();
 
-            // Tính quỹ lương dự kiến chuẩn bị xuất
             ViewBag.GrandTotal = payrollList.Sum(p => p.TotalSalary);
-
             return View(payrollList);
         }
 
@@ -50,7 +49,6 @@ namespace THLTW_B2.Areas.Admin.Controllers
         [HttpPost]
         public async Task<IActionResult> ChotLuong()
         {
-            // Lấy lại các ca chưa trả lương
             var unpaidShifts = await _context.EmployeeShifts
                 .Where(s => s.IsAttended == true && s.IsPaid == false)
                 .ToListAsync();
@@ -61,44 +59,52 @@ namespace THLTW_B2.Areas.Admin.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Tính tổng tiền cần chi
             decimal tongTienChi = unpaidShifts.Sum(s => s.ShiftWage);
 
-            // A. ĐÁNH DẤU CÁC CA NÀY LÀ "ĐÃ THANH TOÁN"
             foreach (var shift in unpaidShifts)
             {
                 shift.IsPaid = true;
             }
 
-            // B. TẠO TỰ ĐỘNG PHIẾU CHI (EXPENSE) CHO ADMIN QUẢN LÝ DOANH THU
             var chiPhiLuong = new Expense
             {
                 ExpenseDate = DateTime.Now,
                 Amount = tongTienChi,
-
                 Title = "Thanh toán quỹ lương nhân viên",
                 Category = "Lương",
                 Note = $"Chi lương cho {unpaidShifts.Select(s => s.UserId).Distinct().Count()} nhân viên (Tổng cộng: {unpaidShifts.Count} ca làm việc)"
             };
 
             _context.Expenses.Add(chiPhiLuong);
-
-            // Lưu tất cả vào Database cùng lúc
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = $"Đã chốt lương thành công! Khoản chi {tongTienChi:N0}đ đã được tự động thêm vào Báo cáo doanh thu.";
             return RedirectToAction("Index");
         }
 
-        // 3. HIỂN THỊ FORM PHÂN CA LÀM VIỆC (GET)
+        // ==========================================
+        // 3. HIỂN THỊ FORM PHÂN CA LÀM VIỆC (GET) - ĐÃ SỬA LỌC
+        // ==========================================
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create() // Nhớ đổi thành async Task nhé
         {
-            ViewBag.UserId = new SelectList(_context.Users.ToList(), "Id", "UserName");
+            // Chỉ lấy những ai có role là "Employee"
+            var employees = await _userManager.GetUsersInRoleAsync("Employee");
+
+            // Ưu tiên hiển thị FullName, nếu không có mới lấy UserName
+            var selectList = employees.Select(e => new
+            {
+                Id = e.Id,
+                DisplayName = !string.IsNullOrEmpty(e.FullName) ? e.FullName : e.UserName
+            });
+
+            ViewBag.UserId = new SelectList(selectList, "Id", "DisplayName");
             return View();
         }
 
-        // 4. XỬ LÝ LƯU CA LÀM VIỆC VÀO DATABASE (POST)
+        // ==========================================
+        // 4. XỬ LÝ LƯU CA LÀM VIỆC VÀO DATABASE (POST) - ĐÃ SỬA LỌC
+        // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(EmployeeShift model)
@@ -117,9 +123,18 @@ namespace THLTW_B2.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.UserId = new SelectList(_context.Users.ToList(), "Id", "UserName", model.UserId);
+            // Nếu nhập lỗi, nạp lại đúng danh sách Employee để Dropdown không bị tàng hình
+            var employees = await _userManager.GetUsersInRoleAsync("Employee");
+            var selectList = employees.Select(e => new
+            {
+                Id = e.Id,
+                DisplayName = !string.IsNullOrEmpty(e.FullName) ? e.FullName : e.UserName
+            });
+
+            ViewBag.UserId = new SelectList(selectList, "Id", "DisplayName", model.UserId);
             return View(model);
         }
+
         // XÓA CA LÀM VIỆC BỊ NHẦM
         [HttpPost]
         public async Task<IActionResult> DeleteShift(int id)
@@ -127,7 +142,6 @@ namespace THLTW_B2.Areas.Admin.Controllers
             var shift = await _context.EmployeeShifts.FindAsync(id);
             if (shift != null)
             {
-                // Chỉ cho phép xóa ca CHƯA THANH TOÁN
                 if (shift.IsPaid)
                 {
                     return Json(new { success = false, message = "Không thể xóa ca đã được thanh toán!" });
@@ -139,13 +153,11 @@ namespace THLTW_B2.Areas.Admin.Controllers
             }
             return Json(new { success = false, message = "Không tìm thấy ca làm việc này!" });
         }
-        // ==========================================
-        // THÊM MỚI: 5. HÀM HIỂN THỊ DANH SÁCH CHI TIẾT CA LÀM (BẢNG EXCEL)
-        // ==========================================
+
+        // 5. HÀM HIỂN THỊ DANH SÁCH CHI TIẾT CA LÀM (BẢNG EXCEL)
         [HttpGet]
         public async Task<IActionResult> DanhSachCaLam()
         {
-            // Lấy toàn bộ lịch sử ca làm việc, hiển thị ngày mới nhất lên đầu tiên
             var shifts = await _context.EmployeeShifts
                 .Include(s => s.User)
                 .OrderByDescending(s => s.WorkDate)
@@ -153,9 +165,8 @@ namespace THLTW_B2.Areas.Admin.Controllers
 
             return View(shifts);
         }
-        // ==========================================
+
         // 6. HIỂN THỊ BẢNG CHẤM CÔNG DẠNG EXCEL MATRIX
-        // ==========================================
         [HttpGet]
         public async Task<IActionResult> BangChamCong(int? thang, int? nam)
         {
@@ -166,10 +177,12 @@ namespace THLTW_B2.Areas.Admin.Controllers
             ViewBag.Nam = y;
             ViewBag.SoNgayTrongThang = DateTime.DaysInMonth(y, m);
 
-            // Lấy danh sách tất cả nhân viên
-            ViewBag.DanhSachNhanVien = await _context.Users.ToListAsync();
+            var admins = await _userManager.GetUsersInRoleAsync("Admin");
+            var employees = await _userManager.GetUsersInRoleAsync("Employee");
+            var danhSachNhanVien = admins.Union(employees).ToList();
 
-            // Lấy toàn bộ ca làm việc của tháng đó
+            ViewBag.DanhSachNhanVien = danhSachNhanVien;
+
             var caLams = await _context.EmployeeShifts
                 .Where(s => s.WorkDate.Month == m && s.WorkDate.Year == y)
                 .ToListAsync();
@@ -183,13 +196,11 @@ namespace THLTW_B2.Areas.Admin.Controllers
         {
             var date = new DateTime(year, month, day);
 
-            // Tìm xem ngày hôm đó nhân viên này đã có ca chưa
             var existingShift = await _context.EmployeeShifts
                 .FirstOrDefaultAsync(s => s.UserId == userId && s.WorkDate.Date == date.Date);
 
             if (string.IsNullOrEmpty(shiftName))
             {
-                // Nếu chọn "Nghỉ / Xóa ca" thì xóa khỏi DB
                 if (existingShift != null)
                 {
                     _context.EmployeeShifts.Remove(existingShift);
@@ -199,13 +210,11 @@ namespace THLTW_B2.Areas.Admin.Controllers
             {
                 if (existingShift != null)
                 {
-                    // Cập nhật ca cũ
                     existingShift.ShiftName = shiftName;
                     existingShift.ShiftWage = shiftWage;
                 }
                 else
                 {
-                    // Thêm ca mới
                     _context.EmployeeShifts.Add(new EmployeeShift
                     {
                         UserId = userId,

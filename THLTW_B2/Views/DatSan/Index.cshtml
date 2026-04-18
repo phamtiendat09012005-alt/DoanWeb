@@ -1,5 +1,10 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<THLTW_B2.Models.ApplicationUser> UserManager
+@{
     ViewData["Title"] = "Đặt Sân Bóng Bao Trọn";
+    // LẤY THÔNG TIN VIP TỪ SERVER
+    var currentUser = await UserManager.GetUserAsync(User);
+    bool isVip = currentUser != null && currentUser.IsVip && currentUser.VipExpirationDate > DateTime.Now;
 }
 
 @section Styles {
@@ -13,7 +18,7 @@
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
                 transform: translateY(-2px);
             }
-        /* Trang trí cho Lịch */
+
         #calendar {
             background-color: white;
             padding: 15px;
@@ -44,6 +49,23 @@
         </div>
     </div>
 
+    @if (TempData["Message"] != null)
+    {
+        <div class="row justify-content-center mb-3">
+            <div class="col-md-8 text-center alert alert-success shadow-sm fw-bold">
+                <i class="fa-solid fa-circle-check me-2"></i>@TempData["Message"]
+            </div>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="row justify-content-center mb-3">
+            <div class="col-md-8 text-center alert alert-danger shadow-sm fw-bold">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>@TempData["Error"]
+            </div>
+        </div>
+    }
+
     <div class="row">
         <div class="col-md-4 mb-4">
             <div class="card shadow border-0 h-100">
@@ -70,18 +92,18 @@
                             <option value="14:30 - 16:00">14:30 - 16:00</option>
                             <option value="16:00 - 17:30">16:00 - 17:30</option>
 
-                            <option value="17:30 - 19:00">17:30 - 19:00 (Giờ vàng)</option>
-                            <option value="19:00 - 20:30">19:00 - 20:30 (Giờ vàng)</option>
-                            <option value="20:30 - 22:00">20:30 - 22:00 (Giờ vàng)</option>
+                            <option value="17:30 - 19:00 (Giờ vàng)">17:30 - 19:00 (Giờ vàng)</option>
+                            <option value="19:00 - 20:30 (Giờ vàng)">19:00 - 20:30 (Giờ vàng)</option>
+                            <option value="20:30 - 22:00 (Giờ vàng)">20:30 - 22:00 (Giờ vàng)</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Họ và Tên <span class="text-danger">*</span></label>
-                        <input type="text" id="nameInput" class="form-control" placeholder="VD: Nguyễn Văn A">
+                        <input type="text" id="nameInput" class="form-control" placeholder="VD: Nguyễn Văn A" value="@(currentUser?.FullName ?? currentUser?.UserName)">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
-                        <input type="text" id="phoneInput" class="form-control" placeholder="09xxxxxxxx">
+                        <input type="text" id="phoneInput" class="form-control" placeholder="09xxxxxxxx" value="@currentUser?.PhoneNumber">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Ghi chú thêm</label>
@@ -97,7 +119,9 @@
 
                     <div class="d-flex justify-content-between">
                         <button type="button" class="btn btn-info text-white fw-bold" onclick="checkAvailablePitches()">Chọn Sân</button>
-                        <button id="btnXacNhan" class="btn btn-primary fw-bold px-4">Xác Nhận</button>
+                        <button id="btnXacNhan" class="btn btn-primary fw-bold px-4">
+                            @(isVip ? "Xác Nhận Đặt" : "Thanh Toán VNPay")
+                        </button>
                     </div>
                 </div>
             </div>
@@ -111,39 +135,14 @@
 
 <div class="modal fade" id="pitchModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-dark text-white">
                 <h5 class="modal-title fw-bold">Sân trống khả dụng</h5>
                 <button type="button" class="btn-close btn-close-white" onclick="pitchModalObj.hide()"></button>
             </div>
             <div class="modal-body bg-light">
-                <p class="text-muted small">Thời gian: <strong id="modalTimeInfo"></strong></p>
+                <p class="text-muted small">Thời gian: <strong id="modalTimeInfo" class="text-primary"></strong></p>
                 <div id="pitchListContainer" class="list-group"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="paymentModal" tabindex="-1" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold"><i class="fa-solid fa-credit-card me-2"></i>Thanh toán tiền cọc</h5>
-                <button type="button" class="btn-close btn-close-white" onclick="paymentModalObj.hide()"></button>
-            </div>
-            <div class="modal-body text-center p-4">
-                <p class="mb-2">Vui lòng thanh toán tiền cọc (30%) để giữ sân:</p>
-                <h3 class="text-danger fw-bold mb-3" id="depositAmount">0 đ</h3>
-                <div class="bg-light p-3 rounded mb-3 border">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=ThanhToanCocDatSan" alt="QR" class="img-fluid shadow-sm mb-2">
-                    <p class="small text-muted mb-0">Nội dung CK: <strong id="paymentContent"></strong></p>
-                </div>
-            </div>
-            <div class="modal-footer d-flex justify-content-center border-0 pb-4">
-                <button type="button" class="btn btn-secondary px-4 me-2" onclick="paymentModalObj.hide()">Hủy bỏ</button>
-                <button type="button" class="btn btn-success px-4 fw-bold" onclick="confirmPaymentAndBooking()">
-                    <i class="fa-solid fa-check-circle me-1"></i>Tôi đã chuyển khoản
-                </button>
             </div>
         </div>
     </div>
@@ -154,11 +153,10 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/vi.js'></script>
 
     <script>
-        let pitchModalObj, paymentModalObj, pendingBookingData = null;
+        const isVipUser = @isVip.ToString().ToLower();
+        let pitchModalObj, pendingBookingData = null;
 
-        // --- KHỞI TẠO LỊCH VÀ KHÓA NGÀY QUÁ KHỨ ---
         document.addEventListener('DOMContentLoaded', function() {
-            // 1. Khóa ngày hôm qua (Không cho khách gõ ngày trong quá khứ)
             let dateInputElem = document.getElementById("dateInput");
             if (dateInputElem) {
                 let today = new Date();
@@ -167,7 +165,6 @@
                 dateInputElem.setAttribute('min', localISOTime);
             }
 
-            // 2. Render cái Lịch FullCalendar
             var calendarEl = document.getElementById('calendar');
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
@@ -180,11 +177,8 @@
                 slotMinTime: '06:00:00',
                 slotMaxTime: '23:00:00',
                 events: '/DatSan/GetCalendarEvents',
-
                 dateClick: function(info) {
                     const selectedDate = info.dateStr.split('T')[0];
-
-                    // Nếu ngày click vào là ngày quá khứ thì chặn lại không cho đổi DateInput
                     let today = new Date();
                     today.setHours(0,0,0,0);
                     let clickedDate = new Date(selectedDate);
@@ -195,7 +189,6 @@
                     }
 
                     document.getElementById('dateInput').value = selectedDate;
-
                     const dateInput = document.getElementById('dateInput');
                     dateInput.style.boxShadow = "0 0 10px #0d6efd";
                     setTimeout(() => dateInput.style.boxShadow = "none", 800);
@@ -206,12 +199,12 @@
             calendar.render();
         });
 
-        // --- CÁC HÀM XỬ LÝ ĐẶT SÂN ---
         function autoLoadPitches() {
             const time = document.getElementById("timeSlotInput").value;
             const date = document.getElementById("dateInput").value;
             if (date && time) checkAvailablePitches();
         }
+
         function tinhSoGioDa(khungGio) {
             try {
                 let gio = khungGio.split('-');
@@ -221,15 +214,22 @@
                 let phutKetThuc = parseInt(ketThuc[0]) * 60 + parseInt(ketThuc[1]);
                 return (phutKetThuc - phutBatDau) / 60;
             } catch (e) {
-                return 1.5; // Mặc định 1.5 tiếng
+                return 1.5;
             }
         }
+
         async function checkAvailablePitches() {
             const date = document.getElementById("dateInput").value;
             const time = document.getElementById("timeSlotInput").value;
             if (!date || !time) return alert("Vui lòng chọn Ngày và Khung giờ!");
 
-            // --- KIỂM TRA GIỜ THỰC TẾ (Lô cốt chặn quá khứ) ---
+            // BẢO VỆ GIỜ VÀNG
+            if (time.includes("Giờ vàng") && !isVipUser) {
+                alert("👑 ĐẶC QUYỀN VIP: Khung Giờ Vàng (17:30 - 22:00) đang rất khan hiếm và chỉ dành riêng cho Hội Viên VIP. Vui lòng nâng cấp tài khoản để đặt sân!");
+                document.getElementById("timeSlotInput").value = "";
+                return;
+            }
+
             let startTimeStr = time.split('-')[0].trim();
             let [hours, minutes] = startTimeStr.split(':');
             let selectedDateTime = new Date(date);
@@ -243,7 +243,6 @@
                 document.getElementById("hiddenPitchId").value = "";
                 return alert("Ca đá này đã trôi qua rồi sếp ơi! Vui lòng chọn khung giờ khác.");
             }
-            // ------------------------------------------------
 
             document.getElementById("modalTimeInfo").innerText = `${date} | ${time}`;
             const container = document.getElementById("pitchListContainer");
@@ -253,7 +252,7 @@
             pitchModalObj.show();
 
             try {
-                const soGioDa = tinhSoGioDa(time); // Gọi hàm tính giờ (Ví dụ: 1.5)
+                const soGioDa = tinhSoGioDa(time);
                 const response = await fetch(`/DatSan/GetAvailablePitches?date=${date}&timeSlot=${time}`);
                 const pitches = await response.json();
                 container.innerHTML = "";
@@ -263,95 +262,116 @@
                 }
 
                 pitches.forEach(pitch => {
-                    // TÍNH TỔNG TIỀN = GIÁ 1 GIỜ x SỐ GIỜ ĐÁ
                     let tongTienSan = pitch.price * soGioDa;
-
                     if (pitch.isBooked) {
                         container.innerHTML += `
-                            <button class="list-group-item d-flex justify-content-between mb-2 rounded border bg-light text-muted" disabled style="cursor: not-allowed;">
+                            <div class="list-group-item d-flex justify-content-between mb-2 rounded border bg-light text-muted" style="cursor: not-allowed;">
                                 <span><del class="fw-bold">${pitch.name}</del> <span class="small text-danger ms-1">(Đã hết chỗ)</span></span>
                                 <span class="badge bg-secondary">${tongTienSan.toLocaleString('vi-VN')} đ</span>
-                            </button>`;
+                            </div>`;
                     } else {
-                        // Hiển thị rõ ràng cho khách: Giá 1 giờ x Số giờ
                         container.innerHTML += `
-                            <button class="list-group-item d-flex justify-content-between align-items-center mb-2 rounded border shadow-sm" onclick="selectPitch(${pitch.id}, '${pitch.name}', ${tongTienSan})">
-                                <div class="text-start">
-                                    <span class="fw-bold text-primary">${pitch.name}</span><br>
-                                    <small class="text-muted">${pitch.price.toLocaleString('vi-VN')}đ/h x ${soGioDa} giờ</small>
+                            <label class="list-group-item d-flex justify-content-between align-items-center mb-2 rounded border shadow-sm" style="cursor: pointer;">
+                                <div class="text-start form-check mb-0">
+                                    <input class="form-check-input pitch-checkbox fs-5" type="checkbox" value="${pitch.id}" data-name="${pitch.name}" data-price="${tongTienSan}">
+                                    <span class="fw-bold text-primary ms-2">${pitch.name}</span><br>
+                                    <small class="text-muted ms-4">${pitch.price.toLocaleString('vi-VN')}đ/h x ${soGioDa} giờ</small>
                                 </div>
-                                <span class="badge bg-success" style="font-size: 0.9rem;">Tổng: ${tongTienSan.toLocaleString('vi-VN')} đ</span>
-                            </button>`;
+                                <span class="badge bg-success" style="font-size: 0.9rem;">+ ${tongTienSan.toLocaleString('vi-VN')} đ</span>
+                            </label>`;
                     }
                 });
+
+                container.innerHTML += `<button class="btn btn-primary w-100 fw-bold mt-2 py-2 shadow" onclick="confirmMultiplePitches()"><i class="fa-solid fa-check-double me-2"></i>Xác Nhận Sân Đã Chọn</button>`;
+
             } catch (error) {
                 container.innerHTML = `<div class="alert alert-danger">Lỗi kết nối máy chủ!</div>`;
             }
         }
 
-        function selectPitch(id, name, tongTien) {
-            document.getElementById("selectedPitchName").innerText = "Đã chọn: " + name;
-            document.getElementById("selectedPitchPriceDisplay").innerText = tongTien.toLocaleString('vi-VN') + " đ";
-            document.getElementById("hiddenPitchId").value = id;
-            document.getElementById("hiddenPitchPrice").value = tongTien;
+        function confirmMultiplePitches() {
+            let checkedBoxes = document.querySelectorAll('.pitch-checkbox:checked');
+            if(checkedBoxes.length === 0) return alert("Vui lòng tích chọn ít nhất 1 sân để bao trọn!");
+
+            let ids = [];
+            let names = [];
+            let total = 0;
+
+            checkedBoxes.forEach(cb => {
+                ids.push(cb.value);
+                names.push(cb.getAttribute('data-name'));
+                total += parseFloat(cb.getAttribute('data-price'));
+            });
+
+            document.getElementById("selectedPitchName").innerHTML = `Đã bao trọn <b class="text-danger">${checkedBoxes.length} sân</b>: <br/> <span class="text-primary">${names.join(", ")}</span>`;
+            document.getElementById("selectedPitchPriceDisplay").innerText = "Tổng tiền: " + total.toLocaleString('vi-VN') + " đ";
+
+            document.getElementById("hiddenPitchId").value = ids.join(",");
+            document.getElementById("hiddenPitchPrice").value = total;
+
             pitchModalObj.hide();
         }
 
+        // BẮT SỰ KIỆN THANH TOÁN
         document.getElementById("btnXacNhan").addEventListener("click", function (e) {
             e.preventDefault();
             const name = document.getElementById("nameInput").value;
             const date = document.getElementById("dateInput").value;
             const time = document.getElementById("timeSlotInput").value;
             const phone = document.getElementById("phoneInput").value;
-            const pitchId = document.getElementById("hiddenPitchId").value;
-            const tongTien = document.getElementById("hiddenPitchPrice").value; // Lấy tổng tiền
+            const pitchIds = document.getElementById("hiddenPitchId").value;
+            const tongTien = document.getElementById("hiddenPitchPrice").value;
 
-            if (!name || !date || !time || !phone || !pitchId) return alert("Vui lòng điền đủ thông tin và chọn sân!");
+            if (!name || !date || !time || !phone || !pitchIds) return alert("Vui lòng điền đủ thông tin và chọn ít nhất 1 sân!");
 
-            pendingBookingData = { pitchId, date, time, price: tongTien, note: document.getElementById("noteInput").value, phone };
+            pendingBookingData = { pitchIds, date, time, price: tongTien, note: document.getElementById("noteInput").value };
 
-            // CHỖ NÀY QUAN TRỌNG NÈ SẾP: Tính 30% của Tổng tiền làm Tiền Cọc
-            const tienCoc = Math.round(parseInt(tongTien) * 0.3);
-            document.getElementById("depositAmount").innerText = tienCoc.toLocaleString('vi-VN') + " đ";
-
-            // Tạo mã đơn hàng độc nhất
-            const paymentContent = "DS" + phone.slice(-4) + date.replace(/-/g, '').slice(-4);
-            document.getElementById("paymentContent").innerText = paymentContent;
-
-            // BƠM TIỀN CỌC VÀO MÃ QR (Đổi link ảnh QR)
-            const qrImg = document.querySelector("#paymentModal img");
-            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${paymentContent}_${tienCoc}`;
-
-            paymentModalObj = new bootstrap.Modal(document.getElementById('paymentModal'));
-            paymentModalObj.show();
+            if (isVipUser) {
+                if (confirm("👑 ĐẶC QUYỀN VIP: Bạn được miễn phí tiền cọc, giữ sân 100% và thanh toán khi đến sân. Chốt đặt ngay?")) {
+                    processBooking();
+                }
+            } else {
+                // CHẠY THẲNG VÀO HÀM XỬ LÝ VNPAY
+                processBooking();
+            }
         });
 
-        async function confirmPaymentAndBooking() {
+        // GỌI XUỐNG BACKEND ĐỂ LẤY LINK VNPAY HOẶC LƯU VIP
+        async function processBooking() {
             if (!pendingBookingData) return;
-            const { pitchId, date, time, price, note } = pendingBookingData;
             const formData = new FormData();
-            formData.append('soccerFieldId', pitchId);
-            formData.append('date', date);
-            formData.append('timeSlot', time);
-            formData.append('price', price);
-            formData.append('note', note);
+            formData.append('soccerFieldIds', pendingBookingData.pitchIds);
+            formData.append('date', pendingBookingData.date);
+            formData.append('timeSlot', pendingBookingData.time);
+            formData.append('price', pendingBookingData.price);
+            formData.append('note', pendingBookingData.note);
 
-            const btn = document.querySelector("#paymentModal .btn-success");
+            const btn = document.getElementById("btnXacNhan");
             const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang xử lý...`;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...`;
             btn.disabled = true;
 
             try {
                 const response = await fetch('/DatSan/TaoDonDatSan', { method: 'POST', body: formData });
                 const result = await response.json();
+
                 if (result.success) {
-                    alert("Đặt sân thành công!");
-                    window.location.reload();
-                } else alert("Lỗi: " + result.message);
+                    if (result.isVip) {
+                        alert("👑 ĐẶC QUYỀN VIP: Đã giữ chỗ thành công!");
+                        window.location.reload();
+                    } else {
+                        // Nhảy sang trang quét thẻ của VNPay
+                        window.location.href = result.url;
+                    }
+                } else {
+                    alert("Lỗi: " + result.message);
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
             } catch (err) {
-                alert("Lỗi kết nối!");
-            } finally {
-                btn.innerHTML = originalHtml; btn.disabled = false;
+                alert("Lỗi kết nối mạng!");
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
             }
         }
     </script>

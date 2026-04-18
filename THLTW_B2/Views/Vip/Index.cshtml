@@ -1,0 +1,122 @@
+﻿@model THLTW_B2.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Nâng Cấp VIP";
+    // Biến kiểm tra xem khách đang là VIP hay Thường
+    bool isCurrentlyVip = Model != null && Model.IsVip && Model.VipExpirationDate > DateTime.Now;
+}
+
+<div class="container mt-5 mb-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-warning text-uppercase"><i class="fa-solid fa-crown me-2"></i>Đặc quyền Hội viên VIP</h2>
+        <p class="text-muted">Nâng tầm trải nghiệm - Trở thành ông vua sân cỏ</p>
+    </div>
+
+    @if (TempData["VipSuccess"] != null)
+    {
+        <div class="alert alert-success text-center shadow rounded-4 py-4 mb-5 border-0" style="background: linear-gradient(to right, #d1e7dd, #c3e6cb);">
+            <h3 class="fw-bold text-success mb-3"><i class="fa-solid fa-circle-check fa-bounce me-2"></i>@TempData["VipSuccess"]</h3>
+            <h5 class="mb-0 text-dark">Tài khoản của bạn đã được nâng cấp lên <b>Đặc Quyền Hạng Thương Gia</b>.</h5>
+            <p class="mt-2 mb-0 fs-5">Hạn sử dụng đến: <strong class="text-danger">@Model.VipExpirationDate.Value.ToString("HH:mm - dd/MM/yyyy")</strong></p>
+        </div>
+    }
+    else if (TempData["VipError"] != null)
+    {
+        <div class="alert alert-danger text-center shadow rounded-4 py-3 mb-5 border-0">
+            <h5 class="fw-bold mb-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>@TempData["VipError"]</h5>
+        </div>
+    }
+    else if (isCurrentlyVip)
+    {
+        <div class="alert alert-success text-center shadow rounded-4 py-4 mb-5 border-0" style="background: linear-gradient(to right, #d1e7dd, #c3e6cb);">
+            <h3 class="fw-bold text-success mb-3"><i class="fa-solid fa-crown me-2"></i>BẠN ĐANG LÀ HỘI VIÊN VIP</h3>
+            <p class="mt-2 mb-0 fs-5">Hạn sử dụng đến: <strong class="text-danger">@Model.VipExpirationDate.Value.ToString("HH:mm - dd/MM/yyyy")</strong></p>
+        </div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-md-4 mb-4" style="@(isCurrentlyVip ? "opacity: 0.5; pointer-events: none;" : "")">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="card-header bg-light text-center py-4 border-0 rounded-top-4">
+                    <h4 class="text-muted fw-bold">GÓI CƠ BẢN</h4>
+                    <h2 class="fw-bold my-3">Miễn phí</h2>
+                </div>
+                <div class="card-body p-4">
+                    <ul class="list-unstyled">
+                        <li class="mb-3"><i class="fa-solid fa-check text-success me-2"></i>Đặt các khung giờ thường</li>
+                        <li class="mb-3"><i class="fa-solid fa-check text-success me-2"></i>Tạo kèo giao lưu cơ bản</li>
+                        <li class="mb-3 text-muted"><i class="fa-solid fa-xmark text-danger me-2"></i>Không được đặt <strong>Giờ Vàng</strong></li>
+                        <li class="mb-3 text-muted"><i class="fa-solid fa-xmark text-danger me-2"></i>Không được bao trọn nhiều sân</li>
+                    </ul>
+                    @if (isCurrentlyVip)
+                    {
+                        <button class="btn btn-secondary w-100 fw-bold py-2 disabled">ĐÃ BỎ QUA</button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-warning shadow rounded-4" style="border-width: 2px !important;">
+                <div class="card-header bg-warning text-dark text-center py-4 border-0 rounded-top-4 position-relative">
+                    @if (isCurrentlyVip)
+                    {
+                        <span class="badge bg-success position-absolute top-0 start-50 translate-middle px-3 py-2 rounded-pill shadow-sm"><i class="fa-solid fa-check me-1"></i> ĐANG SỬ DỤNG</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger position-absolute top-0 start-50 translate-middle px-3 py-2 rounded-pill shadow-sm">ĐỀ XUẤT</span>
+                    }
+
+                    <h4 class="fw-bold mt-2"><i class="fa-solid fa-crown me-2"></i>GÓI VIP (1 THÁNG)</h4>
+                    <h2 class="fw-bold my-3">150.000 đ</h2>
+                </div>
+                <div class="card-body p-4">
+                    <ul class="list-unstyled fw-semibold">
+                        <li class="mb-3"><i class="fa-solid fa-check text-success me-2"></i>Mọi tính năng của gói Cơ bản</li>
+                        <li class="mb-3"><i class="fa-solid fa-star text-warning me-2"></i>Mở khóa đặt <strong>GIỜ VÀNG</strong></li>
+                        <li class="mb-3"><i class="fa-solid fa-star text-warning me-2"></i>Mở khóa <strong>Giỏ hàng đa sân</strong></li>
+                        <li class="mb-3"><i class="fa-solid fa-star text-warning me-2"></i>Ưu tiên hiển thị khi cáp kèo</li>
+                    </ul>
+
+                    <button id="btnPayVnPay" class="btn btn-warning w-100 fw-bold py-2 shadow-sm fs-5" onclick="payWithVnPay()">
+                        <img src="https://vnpay.vn/s1/vnpay/logo.svg" style="height: 20px; margin-right: 5px;" alt="VNPay">
+                        @(isCurrentlyVip ? "GIA HẠN THÊM" : "THANH TOÁN NGAY")
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function payWithVnPay() {
+            const btn = document.getElementById("btnPayVnPay");
+            const originalHtml = btn.innerHTML;
+
+            // Hiệu ứng loading lúc chờ Server tạo link
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Đang chuyển hướng...`;
+            btn.disabled = true;
+
+            try {
+                // Gọi API lấy link VNPay từ Controller
+                const response = await fetch('/Vip/CreatePaymentUrl', { method: 'POST' });
+                const result = await response.json();
+
+                if(result.success) {
+                    // Trình duyệt lập tức nhảy sang trang điền thẻ của VNPay
+                    window.location.href = result.url;
+                } else {
+                    alert("Lỗi tạo URL thanh toán!");
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                alert("Lỗi kết nối mạng, vui lòng thử lại!");
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+    </script>
+}
